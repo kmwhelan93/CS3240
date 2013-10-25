@@ -13,10 +13,9 @@ with con:
     cur = con.cursor()
     cur.execute("DROP TABLE IF EXISTS Prefs")
     cur.execute ("CREATE TABLE Prefs (Id INTEGER PRIMARY KEY, Username TEXT ,\
-                  Password TEXT, AutoSync INTEGER)")
-    cur.execute("INSERT INTO Prefs VALUES (NULL,'User1', 'password1', 1)")
-    cur.execute("INSERT INTO Prefs VALUES (NULL,'User2', 'password2', 1)")
-    cur.execute("INSERT INTO Prefs VALUES (NULL,'User3', 'password3', 1)")
+                  Password TEXT, AutoSync INTEGER, Directory TEXT)")
+    cur.execute("INSERT INTO Prefs VALUES (NULL,'User1', 'password1', 1 , '/home/student/PycharmProjects')")
+
 
     cur.execute("SELECT * FROM Prefs")
     rows = cur.fetchall()

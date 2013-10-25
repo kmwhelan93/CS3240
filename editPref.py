@@ -3,6 +3,7 @@
 
 import sqlite3
 import getpass
+import os
 import sys
 
 def viewallpreferences( ):
@@ -23,6 +24,7 @@ def viewyourprefs():
     print "\nUsername: " + userrow[1]
     print "Password: " + userrow[2]
     print "AutoSync(0=>off; 1=>on): " + str(userrow[3])
+    print "OneDir Directory: " + userrow[4]
     print ""
     return
 
@@ -70,13 +72,31 @@ def changeautosync():
     print ("AutoSync setting has been turned off.\n")
     return
 
+def changedirectory():
+    print ("Your current OneDir directory is : " + userrow[4])
+    answer = raw_input("Would you like to change this directory? (Y/N): ")
+    if ( answer == 'Y' or answer == 'y') :
+        newdir = raw_input('Alright. Enter new OneDir directory path:')
+        if (os.path.isdir(newdir) == False):
+            print "Sorry. This directory path doesn't seem to exist."
+            return
+
+        uDirectory = newdir
+        cur.execute("UPDATE Prefs SET Directory = ? WHERE Username = ?", (uDirectory, uUsername))
+        print "Alright. Your OneDir Directory has been changed."
+        con.commit()
+        return
+    print "Ok. Your OneDir Directory has not been changed."
+    return
+
+
+
 options = {
             1 : viewyourprefs,
             2 : changepassword,
-            3 : changeautosync
+            3 : changeautosync,
+            4 : changedirectory
             }
-
-
 
 with con:
 
@@ -95,6 +115,7 @@ with con:
     print "   Press 1 to view your preferences."
     print "   Press 2 to change password."
     print "   Press 3 to change autosync setting."
+    print "   Press 4 to change OneDir Directory."
     print "   Press 0 to exit."
     print "-------------------------------------------------"
 
@@ -106,6 +127,7 @@ with con:
         print "   Press 1 to view your preferences."
         print "   Press 2 to change password."
         print "   Press 3 to change autosync setting."
+        print "   Press 4 to change OneDir Directory."
         print "   Press 0 to exit."
         print "---------------------------------------------"
         x = int(raw_input('What else would you like to do?'))
