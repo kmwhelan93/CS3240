@@ -6,5 +6,3 @@ class SDaemon:
 
     def __init__(self):
         self.db = Server.DbOps()
-
-    

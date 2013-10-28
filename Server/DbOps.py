@@ -7,7 +7,7 @@ class DbOps:
 
     def __init__(self):
         # Connect to the database. Name should be preceeded with a . so its a hidden file
-        self.db = sqlite3.connect('.oneDir.db')
+        self.db = sqlite3.connect('../.oneDir.db')
         # Get a cursor object for operations
         self.cur = self.db.cursor()
         # Get a SHA3 256 bit hasher for storing passwords
