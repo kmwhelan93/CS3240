@@ -1,11 +1,34 @@
 __author__ = 'justin'
-import Server.DbOps as DbOps
 
-class SInterface:
+from Tkinter import *
+from ttk import Frame, Style
+from Server import DbOps
 
+class View(Frame):
+    def __init__(self, parent):
+        Frame.__init__(self, parent)
+        self.parent = parent
+        self.initUI()
+
+    def initUI(self):
+        self.parent.title("OneDir Server Admin Interface")
+        self.pack(fill=BOTH, expand=1)
+        message = Label(self.parent, text="Hello")
+        message.pack()
+        w = Text(self.parent, bg="white", undo=False, state='disabled')
+        w.pack()
+        w.insert(END, "hello")
+
+        #w.insert("hello")
+
+class SInterface():
 
     def __init__(self):
         self.db = DbOps.DbOps()
+        root = Tk()
+        root.geometry("250x250+300+300")
+        v = View(root)
+        root.mainloop()
 
     def menu(self):
         print "Howdy Admin! Please select an option:"
@@ -17,7 +40,7 @@ class SInterface:
         print "5. Change a user's password"
         print "6. Start Server Daemon"
         print "0. Exit"
-        print "-----------------------------------------"
+        print "-----------------------------------------\n"
 
     def start(self):
         while True:
@@ -49,10 +72,4 @@ class SInterface:
                     pw = raw_input("Enter the new password: ")
                     self.db.updatePassword(str, pw)
                 else:
-                    print "That user does not exist."
-
-
-
-if __name__== '__main__':
-     SI = SInterface()
-     SI.start()
+                    print "That user does not exist.\n\n"
