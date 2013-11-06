@@ -54,11 +54,86 @@ class View(Frame):
         printTransTime = Button(self.parent, text="By Time")
         printTransTime.grid(row=2, column=2)
 
+        trans = Label(self.parent, text="Username: ")
+        trans.grid(row=3, column=0)
+
+        vcmd = (self.parent.register(self.valid), '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+
+        uentry = Entry(self.parent, width=20, bg="white", validate="key", validatecommand=vcmd)
+        uentry.grid(row=3, column=1, columnspan=2)
+
+        trans = Label(self.parent, text="Actions: ")
+        trans.grid(row=5, column=0)
+
+        changepw = Button(self.parent, text="Change\nPassword")
+        changepw.grid(row=5, column=1)
+
+        delete = Button(self.parent, text="Delete", command=self.alert)
+        delete.grid(row=5, column=2)
+
+        start = Button(self.parent, text="Start Server Daemon")
+        start.grid(row=6, column=0, columnspan=3)
+
+        self.uinfo = Label(self.parent, text="")
+        self.uinfo.grid(row=4, column=1, columnspan=2)
+
         self.log.insert(END, "Howdy Admin, Welcome to the Server Interface \n\n")
+
+    def valid(self, d, i, P, s, S, v, V, W):
+        if self.govnah.userExists(P):
+            self.goodMessage("Valid User")
+        else:
+            self.badMessage("User not Found")
+        return True
+
+    def goodMessage(self, msg):
+        self.uinfo.config(text=msg, fg="forest green")
+
+    def badMessage(self, msg):
+        self.uinfo.config(text=msg, fg="red")
+
+    def alert(self):
+        top = Toplevel()
+        top.title("Are you sure?")
+
+        msg = Message(top, text="Are you sure?")
+        msg.pack()
+
+        button = Button(top, text="Dismiss", command=top.destroy)
+        button.pack()
+
+        self.center(top)
+
+
+
 
     def appendText(self, text):
         self.log.insert(END, str(text) + "\n")
         self.log.see(END)
+
+    #def center(self, win):
+    #    win.update()
+    #    win.update_idletasks()
+    #    frm_width = win.winfo_rootx() - win.winfo_x()
+    #    win_width = win.winfo_width() + (frm_width*2)
+    #    titlebar_height = win.winfo_rooty() - win.winfo_y()
+    #    win_height = win.winfo_height() + (titlebar_height + frm_width)
+    #    x = (win.winfo_screenwidth() / 2) - (win_width / 2)
+    #    y = (win.winfo_screenheight() / 2) - (win_height / 2)
+    #    geom = (win.winfo_width(), win.winfo_height(), x, y) # see note
+    #    win.geometry('{0}x{1}+{2}+{3}'.format(*geom))
+
+    def center(self, win):
+        win.withdraw()
+        win.update_idletasks()  # Update "requested size" from geometry manager
+
+        x = (win.winfo_screenwidth() - self.parent.winfo_reqwidth()) / 2
+        y = (win.winfo_screenheight() - self.parent.winfo_reqheight()) / 2
+        win.geometry("+%d+%d" % (x, y))
+
+        # This seems to draw the window frame immediately, so only call deiconify()
+        # after setting correct window position
+        win.deiconify()
 
 
 class SInterface():
@@ -98,7 +173,8 @@ class SInterface():
             self.view.appendText(t)
         self.view.appendText("")
 
-
+    def userExists(self, userName):
+        return self.db.userExists(userName)
 
     def start(self):
         while True:
