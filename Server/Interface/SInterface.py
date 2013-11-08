@@ -4,6 +4,7 @@ from Tkinter import *
 from ttk import Frame, Style
 from Server import DbOps
 from idlelib.WidgetRedirector import WidgetRedirector
+import tkMessageBox
 
 
 class ReadOnlyText(Text):
@@ -19,6 +20,7 @@ class View(Frame):
         Frame.__init__(self, parent)
         self.parent = parent
         self.initUI()
+        self.lock = False
 
     def initUI(self):
         self.parent.title("OneDir Server Admin Interface")
@@ -48,7 +50,7 @@ class View(Frame):
         trans = Label(self.parent, text="List Transactions: ")
         trans.grid(row=2, column=0)
 
-        printTransType = Button(self.parent, text="By Name")
+        printTransType = Button(self.parent, text="By Type")
         printTransType.grid(row=2, column=1)
 
         printTransTime = Button(self.parent, text="By Time")
@@ -65,10 +67,10 @@ class View(Frame):
         trans = Label(self.parent, text="Actions: ")
         trans.grid(row=5, column=0)
 
-        changepw = Button(self.parent, text="Change\nPassword")
+        changepw = Button(self.parent, text="Change\nPassword", command=self.getNewPw)
         changepw.grid(row=5, column=1)
 
-        delete = Button(self.parent, text="Delete", command=self.alert)
+        delete = Button(self.parent, text="Delete", command=self.delUser)
         delete.grid(row=5, column=2)
 
         start = Button(self.parent, text="Start Server Daemon")
@@ -80,11 +82,13 @@ class View(Frame):
         self.log.insert(END, "Howdy Admin, Welcome to the Server Interface \n\n")
 
     def valid(self, d, i, P, s, S, v, V, W):
-        if self.govnah.userExists(P):
-            self.goodMessage("Valid User")
-        else:
-            self.badMessage("User not Found")
-        return True
+        if not self.lock:
+            self.uname = P
+            if self.govnah.userExists(P):
+                self.goodMessage("Valid User")
+            else:
+                self.badMessage("User not Found")
+        return not self.lock
 
     def goodMessage(self, msg):
         self.uinfo.config(text=msg, fg="forest green")
@@ -104,24 +108,55 @@ class View(Frame):
 
         self.center(top)
 
+    def areYouSureDelete(self):
+        return tkMessageBox.askyesno("Confirmation", "Are you sure you want delete " + self.uname)
 
+    def delUser(self):
+        if self.govnah.userExists(self.uname):
+            self.lock = True
+            if self.areYouSureDelete():
+                self.govnah.delUser(str(self.uname))
+                self.appendText("User: " + self.uname + " successfully deleted.")
+                self.appendText("")
+            self.lock = False
 
 
     def appendText(self, text):
         self.log.insert(END, str(text) + "\n")
         self.log.see(END)
 
-    #def center(self, win):
-    #    win.update()
-    #    win.update_idletasks()
-    #    frm_width = win.winfo_rootx() - win.winfo_x()
-    #    win_width = win.winfo_width() + (frm_width*2)
-    #    titlebar_height = win.winfo_rooty() - win.winfo_y()
-    #    win_height = win.winfo_height() + (titlebar_height + frm_width)
-    #    x = (win.winfo_screenwidth() / 2) - (win_width / 2)
-    #    y = (win.winfo_screenheight() / 2) - (win_height / 2)
-    #    geom = (win.winfo_width(), win.winfo_height(), x, y) # see note
-    #    win.geometry('{0}x{1}+{2}+{3}'.format(*geom))
+    def getNewPw(self):
+        if self.govnah.userExists(self.uname):
+            self.unameforpwch = self.uname
+            self.lock = True
+            self.top = Toplevel()
+            self.top.protocol('WM_DELETE_WINDOW', self.closePwWindow)
+            self.top.title = "Change Password"
+            l = Label(self.top, text="Enter a new Password for user: " + self.unameforpwch)
+            l.grid(row=0, columnspan=2)
+            self.entry = Entry(self.top, width=20, bg="white")
+            self.entry.grid(row=1, columnspan=2)
+            n = Button(self.top, text="Cancel", command=self.closePwWindow)
+            n.grid(row=2, column=0)
+            y = Button(self.top, text="Proceed", command=self.confirmPwChange)
+            y.grid(row=2, column=1)
+            self.center(self.top)
+
+    def closePwWindow(self):
+        self.lock = False
+        self.top.destroy()
+        self.appendText("Password for " + self.unameforpwch + " not changed")
+        self.appendText("")
+
+    def confirmPwChange(self):
+        pw = self.entry.get()
+        if len(pw) > 0:
+            self.govnah.chUserPass(self.unameforpwch, pw)
+            self.top.destroy()
+            self.appendText("Password for " + self.unameforpwch + " successfully changed to " + pw)
+            self.appendText("")
+            self.lock = False
+
 
     def center(self, win):
         win.withdraw()
@@ -175,6 +210,14 @@ class SInterface():
 
     def userExists(self, userName):
         return self.db.userExists(userName)
+
+    def delUser(self, userName):
+        if self.db.userExists(userName):
+            self.db.deleteUser(userName)
+
+    def chUserPass(self, usr, pw):
+        if self.db.userExists(usr):
+            self.db.updatePassword(usr, pw)
 
     def start(self):
         while True:
