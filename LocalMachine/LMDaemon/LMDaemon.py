@@ -1,5 +1,9 @@
 __author__ = 'Michael Gilbertson'
 
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+
 import LocalMachine.prefOps
 
 class LMDaemon:

@@ -1,15 +1,20 @@
-__author__ = 'Michael Gilbertson'
 
-import LocalMachine.prefOps as prefOps
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from prefOps import localPrefs
+import sys
+
 
 class LMInterface:
 
     def __init__(self):
-        self.con = prefOps.prefOps()
+        self.ops = localPrefs()
+        self.Username = self.ops.getUsername()
+
 
     def menu(self):
 
-        print "\nWelcome to your OneDir Preferences."
         print "-------------------------------------------------"
         print "   Press 1 to view your preferences."
         print "   Press 2 to change password."
@@ -20,24 +25,24 @@ class LMInterface:
 
 
     def start(self):
-
+        print "\nWelcome " + self.Username + " to your OneDir Preferences."
         while True:
             self.menu()
             x = int(raw_input('What would you like to do? '))
             if not (x >= 0 or x <= 4):
-                print "Invalid Option \n\n"
+                print "\nInvalid Selection. Please select another option.\n"
                 continue
             elif x == 0:
-                print "Interface Exit"
+                print "\nYou are now exiting your OneDir Preferences. Goodbye."
                 break
             elif x == 1:
-                self.con.viewuserprefs(Username)
+                self.ops.viewuserprefs(self.Username)
             elif x == 2:
-                self.con.changepassword(Username)
+                self.ops.changepassword(self.Username)
             elif x == 3:
-                self.con.changeautosync(Username)
+                self.ops.changeautosync(self.Username)
             elif x == 4:
-                self.con.changedirectory(Username)
+                self.ops.changedirectory(self.Username)
 
 
 if __name__== '__main__':
