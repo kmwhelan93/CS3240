@@ -65,6 +65,7 @@ class localPrefs:
         attempts = 5
 
         while ( oldpwd != curUser[2]):
+            
             print "This password doesn't match your account. Please try again."
             attempts = attempts -1
             if ( attempts == 0):
