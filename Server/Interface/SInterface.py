@@ -6,6 +6,7 @@ from Server import DbOps
 from idlelib.WidgetRedirector import WidgetRedirector
 import tkMessageBox
 from PIL import Image, ImageTk
+import tkFont
 
 class ReadOnlyText(Text):
     def __init__(self, *args, **kwargs):
@@ -78,6 +79,14 @@ class View(Frame):
 
         self.uinfo = Label(self.parent, text="")
         self.uinfo.grid(row=4, column=1, columnspan=2)
+
+
+        self.img = ImageTk.PhotoImage(file='../../img/logo50.png')
+        logoLabel = Label(self.parent, image=self.img)
+        logoLabel.grid(row=7, column=0)
+
+        slogan = Label(self.parent, text="This Directory\nis a OneDir!", font=("Helvetica", 10, "bold italic"))
+        slogan.grid(row = 7, column=1, columnspan=2)
 
         self.log.insert(END, "Howdy Admin, Welcome to the Server Interface \n\n")
 
@@ -177,7 +186,7 @@ class SInterface():
         self.db = DbOps.DbOps()
         root = Tk()
         root.geometry("1150x400+100+100")
-        img = ImageTk.PhotoImage(file='../../img/logo.png')
+        img = ImageTk.PhotoImage(file='../../img/logo50.png')
         root.tk.call('wm', 'iconphoto', root._w, img)
         self.view = View(root, self)
         root.mainloop()
