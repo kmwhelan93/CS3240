@@ -5,7 +5,7 @@ from ttk import Frame, Style
 from Server import DbOps
 from idlelib.WidgetRedirector import WidgetRedirector
 import tkMessageBox
-
+from PIL import Image, ImageTk
 
 class ReadOnlyText(Text):
     def __init__(self, *args, **kwargs):
@@ -177,6 +177,8 @@ class SInterface():
         self.db = DbOps.DbOps()
         root = Tk()
         root.geometry("1150x400+100+100")
+        img = ImageTk.PhotoImage(file='../../img/logo.png')
+        root.tk.call('wm', 'iconphoto', root._w, img)
         self.view = View(root, self)
         root.mainloop()
 
