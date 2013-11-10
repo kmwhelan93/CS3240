@@ -7,6 +7,9 @@ COMMANDS = {
     'put': ('put <local file path> <remote file name>', 'Uploads a file with a given filename'),
     'help': ('help', 'Displays a list of all the available commands'),
     'quit': ('quit', 'Disconnects from the server'),
+    'move': ('move', 'Moves a file on server'),
+    'create': ('create', 'Creates a file on server'),
+    'delete': ('delete', 'Deletes a file on server'),
 }
 
 

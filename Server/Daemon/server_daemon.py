@@ -17,6 +17,8 @@
 import os
 import optparse
 
+import json
+
 from twisted.internet import reactor, protocol
 from twisted.protocols import basic
 
@@ -30,7 +32,7 @@ class FileTransferProtocol(basic.LineReceiver):
         self.factory.clients.append(self)
         self.file_handler = None
         self.file_data = ()
-        self.transport.write('init\n')
+        self.sendLine("init")
 
         display_message(
             'Connection from: %s (%d clients total)' % (self.transport.getPeer().host, len(self.factory.clients)))
@@ -44,58 +46,54 @@ class FileTransferProtocol(basic.LineReceiver):
             'Connection from %s lost (%d clients left)' % (self.transport.getPeer().host, len(self.factory.clients)))
 
     def lineReceived(self, line):
-        display_message('Received the following line from the client [%s]: %s' % (self.transport.getPeer().host, line))
-
-        data = self._cleanAndSplitInput(line)
-        if len(data) == 0 or data == '':
-            return
-
-        command = data[0].lower()
+        data = json.loads(line)
+        command = data["command"]
+        print line
         if not command in COMMANDS:
             self.transport.write('Invalid command\n')
             self.transport.write('ENDMSG\n')
             return
-        if command == 'list':
-            self._send_list_of_files()
+        if command == 'move':
+            print "Receiving move from " + data['src'] + " to " + data['dest']
+            os.renames(os.path.join(self.factory.files_path, data["username"], data['src']), os.path.join(self.factory.files_path, data['username'], data['dest']))
+        elif command == 'create':
+            print "Receiving create for " + data['file']
+            if data['what'] == 'directory':
+                print os.path.join(self.factory.files_path, data["username"], data['file'])
+                os.mkdir(os.path.join(self.factory.files_path, data["username"], data['file']))
+            else:
+                os.mknod(os.path.join(self.factory.files_path, data["username"], data['file']))
         elif command == 'get':
-            try:
-                filename = data[1]
-            except IndexError:
-                self.transport.write('Missing filename\n')
-                self.transport.write('ENDMSG\n')
-                return
-
-            if not self.factory.files:
-                self.factory.files = self._get_file_list()
-
-            if not filename in self.factory.files:
-                self.transport.write('File with filename %s does not exist\n' % (filename))
-                self.transport.write('ENDMSG\n')
-                return
-
-            display_message('Sending file: %s (%d KB)' % (filename, self.factory.files[filename][1] / 1024))
-
-            self.transport.write('HASH %s %s\n' % (filename, self.factory.files[filename][2]))
-            self.setRawMode()
-
-            for bytes in read_bytes_from_file(os.path.join(self.factory.files_path, filename)):
-                self.transport.write(bytes)
-
-            self.transport.write('\r\n')
-            self.setLineMode()
+            timestamps = self.get_timestamps(data['username'])
+            retVal = {'files': {}, 'directories': [], "remove": []}
+            for file, stamp in timestamps.iteritems():
+                if (not file in data['timestamps'] or stamp > data['timestamps'][file]):
+                    path = os.path.join(self.factory.files_path, data['username'], file)
+                    if os.path.isdir(path):
+                        retVal['directories'].append(file)
+                    elif os.path.isfile(path):
+                        f = open(path, 'r')
+                        retVal['files'][file] = {"content": f.read()}
+                        f.close()
+            for file, stamp in data['timestamps'].iteritems():
+                if not file in timestamps:
+                    retVal['remove'].append(file)
+            self.sendLine(json.dumps(retVal))
         elif command == 'put':
             try:
-                filename = data[1]
-                file_hash = data[2]
+                filename = data["local"]
             except IndexError:
                 self.transport.write('Missing filename or file MD5 hash\n')
                 self.transport.write('ENDMSG\n')
                 return
 
-            self.file_data = (filename, file_hash)
+            file_path = os.path.join(self.factory.files_path, data['username'], filename)
             # Switch to the raw mode (for receiving binary data)
             print 'Receiving file: %s' % (filename)
-            self.setRawMode()
+            f = open(file_path, 'w')
+            f.write(data['content'])
+            f.close()
+
         elif command == 'help':
             self.transport.write('Available commands:\n\n')
 
@@ -106,48 +104,19 @@ class FileTransferProtocol(basic.LineReceiver):
         elif command == 'quit':
             self.transport.loseConnection()
 
-    def rawDataReceived(self, data):
-        filename = self.file_data[0]
-        file_path = os.path.join(self.factory.files_path, filename)
+    def modification_date(self, username, filename):
+        t = os.path.getmtime(os.path.join(self.factory.files_path, username, filename))
+        return t
+        #return datetime.datetime.fromtimestamp(t)
 
-        display_message('Receiving file chunk (%d KB)' % (len(data)))
-
-        if not self.file_handler:
-            self.file_handler = open(file_path, 'wb')
-
-        if data.endswith('\r\n'):
-            # Last chunk
-            data = data[:-2]
-            self.file_handler.write(data)
-            self.setLineMode()
-
-            self.file_handler.close()
-            self.file_handler = None
-
-            if validate_file_md5_hash(file_path, self.file_data[1]):
-                self.transport.write('File was successfully transfered and saved\n')
-                self.transport.write('ENDMSG\n')
-
-                display_message('File %s has been successfully transfered' % (filename))
-            else:
-                os.unlink(file_path)
-                self.transport.write('File was successfully transfered but not saved, due to invalid MD5 hash\n')
-                self.transport.write('ENDMSG\n')
-
-                display_message(
-                    'File %s has been successfully transfered, but deleted due to invalid MD5 hash' % (filename))
-        else:
-            self.file_handler.write(data)
-
-    def _send_list_of_files(self):
-        files = self._get_file_list()
-        self.factory.files = files
-
-        self.transport.write('Files (%d): \n\n' % len(files))
-        for key, value in files.iteritems():
-            self.transport.write('- %s (%d.2 KB)\n' % (key, (value[1] / 1024.0)))
-
-        self.transport.write('ENDMSG\n')
+    def get_timestamps(self, username):
+        timestamps = {}
+        for file in os.listdir(os.path.join(self.factory.files_path, username)):
+            if (not file.endswith("~")):
+                modTime = self.modification_date(username, file)
+                timestamps[file] = modTime
+            #print self.timestamps
+        return timestamps
 
     def _get_file_list(self):
         """ Returns a list of the files in the specified directory as a dictionary:
@@ -195,7 +164,7 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     if (options.path == None):
-        options.path = "/home/student/Documents/CSA/server"
+        options.path = "/home/student/Documents/CSA/server/"
 
     display_message('Listening on port %d, serving files from directory: %s' % (options.port, options.path))
 
