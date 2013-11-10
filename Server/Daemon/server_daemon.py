@@ -18,7 +18,7 @@ import os
 import optparse
 
 import json
-
+import Server.DbOps
 from twisted.internet import reactor, protocol
 from twisted.protocols import basic
 
@@ -170,3 +170,11 @@ if __name__ == '__main__':
 
     reactor.listenTCP(options.port, FileTransferServerFactory(options.path))
     reactor.run()
+
+### SERVER DATABASE OPERATIONS... INSERTED BY JUSTIN ###
+db = Server.DbOps.DbOps()
+def auth(username, password):
+    return db.authUser(username, password)
+
+def register(username, password):
+    return db.createUser(username, password)
