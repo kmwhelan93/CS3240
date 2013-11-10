@@ -16,6 +16,7 @@
 
 import os
 import optparse
+from common import get_timestamps
 
 import json
 import Server.DbOps
@@ -59,12 +60,13 @@ class FileTransferProtocol(basic.LineReceiver):
         elif command == 'create':
             print "Receiving create for " + data['file']
             if data['what'] == 'directory':
-                print os.path.join(self.factory.files_path, data["username"], data['file'])
-                os.mkdir(os.path.join(self.factory.files_path, data["username"], data['file']))
+                path = os.path.join(self.factory.files_path, data["username"], data['file'])
+                if not os.path.exists(path):
+                    os.mkdir(path)
             else:
                 os.mknod(os.path.join(self.factory.files_path, data["username"], data['file']))
         elif command == 'get':
-            timestamps = self.get_timestamps(data['username'])
+            timestamps = get_timestamps(os.path.join(self.factory.files_path, data['username']))
             retVal = {'files': {}, 'directories': [], "remove": []}
             for file, stamp in timestamps.iteritems():
                 if (not file in data['timestamps'] or stamp > data['timestamps'][file]):
@@ -103,19 +105,6 @@ class FileTransferProtocol(basic.LineReceiver):
             self.transport.write('ENDMSG\n')
         elif command == 'quit':
             self.transport.loseConnection()
-
-    def modification_date(self, username, filename):
-        t = os.path.getmtime(os.path.join(self.factory.files_path, username, filename))
-        return t
-        #return datetime.datetime.fromtimestamp(t)
-
-    def get_timestamps(self, username):
-        timestamps = {}
-        for file in os.listdir(os.path.join(self.factory.files_path, username)):
-            modTime = self.modification_date(username, file)
-            timestamps[file] = modTime
-            #print self.timestamps
-        return timestamps
 
     def _get_file_list(self):
         """ Returns a list of the files in the specified directory as a dictionary:

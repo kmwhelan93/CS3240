@@ -1,5 +1,6 @@
 import hashlib
 from datetime import datetime
+import os
 
 COMMANDS = {
     'list': ('list', 'Displays a list of all the available files'),
@@ -63,3 +64,17 @@ def clean_and_split_input(input):
     input = input.split(' ')
 
     return input
+
+# This is called by the both the server and the client
+# The server calls it with base_path = server_path + username
+# While the client calls it just with base_path
+# Needs to get all of the files/directories in current directory. That means it
+# must go more than a level deep (recursively)
+def get_timestamps(base_path):
+    timestamps = {}
+    for file in os.listdir(base_path):
+        path = os.path.join(base_path, file)
+        modTime = os.path.getmtime(path)
+        timestamps[file] = modTime
+        #print self.timestamps
+    return timestamps

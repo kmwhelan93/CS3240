@@ -7,6 +7,7 @@ import time
 import logging
 
 import json
+from common import get_timestamps
 
 from twisted.internet.protocol import Protocol, ClientFactory
 from sys import stdout
@@ -45,12 +46,12 @@ class Echo(LineReceiver):
         self.task_id = task.LoopingCall(self.callback)
         self.task_id.start(.5)
         #self.setLineMode()
-        task.LoopingCall(self.get_files).start(10)
+        task.LoopingCall(self.get_files).start(3)
 
     def get_files(self):
         username = "kevin"
         password = "kevin"
-        timestamps = self.get_timestamps()
+        timestamps = get_timestamps(self.files_path)
         object = {"command": "get", "username": username, "password": password, "timestamps": timestamps}
         self.q.put(object)
 
@@ -129,19 +130,6 @@ class Echo(LineReceiver):
     def _display_message(self, message):
         print message
 
-
-    def modification_date(self, filename):
-        t = os.path.getmtime(os.path.join(self.files_path, filename))
-        return t
-        #return datetime.datetime.fromtimestamp(t)
-
-    def get_timestamps(self):
-        timestamps = {}
-        for file in os.listdir(self.files_path):
-            modTime = self.modification_date(file)
-            timestamps[file] = modTime
-            #print self.timestamps
-        return timestamps
 
 
 class EchoClientFactory(ClientFactory):
