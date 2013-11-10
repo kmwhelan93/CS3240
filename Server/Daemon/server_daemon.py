@@ -112,9 +112,8 @@ class FileTransferProtocol(basic.LineReceiver):
     def get_timestamps(self, username):
         timestamps = {}
         for file in os.listdir(os.path.join(self.factory.files_path, username)):
-            if (not file.endswith("~")):
-                modTime = self.modification_date(username, file)
-                timestamps[file] = modTime
+            modTime = self.modification_date(username, file)
+            timestamps[file] = modTime
             #print self.timestamps
         return timestamps
 
