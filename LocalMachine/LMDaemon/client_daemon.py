@@ -7,6 +7,7 @@ import time
 import logging
 
 import json
+from common import get_timestamps
 
 from twisted.internet.protocol import Protocol, ClientFactory
 from sys import stdout
@@ -21,6 +22,7 @@ from watchdog.observers import Observer
 from common import COMMANDS, display_message, validate_file_md5_hash, get_file_md5_hash, read_bytes_from_file, clean_and_split_input
 
 import os
+import shutil
 import optparse
 
 
@@ -33,11 +35,10 @@ class Echo(LineReceiver):
         self.server_port = server_port
         self.files_path = files_path
         self.connected = False
+        self.ignore = []
 
-        self.buffer = []
         self.file_handler = None
         self.file_data = ()
-        self.count = 0
 
     def connectionMade(self):
 
@@ -45,12 +46,12 @@ class Echo(LineReceiver):
         self.task_id = task.LoopingCall(self.callback)
         self.task_id.start(.5)
         #self.setLineMode()
-        task.LoopingCall(self.get_files).start(10)
+        task.LoopingCall(self.get_files).start(3)
 
     def get_files(self):
         username = "kevin"
         password = "kevin"
-        timestamps = self.get_timestamps()
+        timestamps = get_timestamps(self.files_path)
         object = {"command": "get", "username": username, "password": password, "timestamps": timestamps}
         self.q.put(object)
 
@@ -64,39 +65,49 @@ class Echo(LineReceiver):
     def dataReceived(self, data):
         if (data == "init\n"):
             self.connected = True
-            print 'here'
         else:
             files = json.loads(data.strip())
             # get directories first
             files['directories'].sort()
-
+            directories = []
             for file in files['remove']:
                 path = os.path.join(self.files_path, file)
-                if os.path.isdir(path):
-                    os.rmdir(path)
-                elif os.path.isfile(path):
+                if os.path.isfile(path):
                     os.unlink(path)
+                else:
+                    directories.append(path)
+            directories.sort(reverse=True)
+            for dir in directories:
+                if os.path.isdir(dir):
+                    shutil.rmtree(dir)
 
             for directory in files['directories']:
                 path = os.path.join(self.files_path, directory)
                 if not os.path.exists(path):
                     os.mkdir(path)
+                self.ignore.append(path)
             # because files need the directories to exist
             for file, content in files['files'].iteritems():
                 path = os.path.join(self.files_path, file)
                 f = open(path, 'w')
                 f.write(content['content'] +'')
                 f.close()
+                self.ignore.append(path)
 
     def _sendCommand(self, object):
         object["username"] = "kevin"
         object["password"] = "kevin"
         sendObj = {"username": "kevin", "password": "kevin"}
         command = object["command"]
-        print "command follows"
         if command == 'move' or command=='create' or command=='get':
+            if command=='create' and object['file'] in self.ignore:
+                self.ignore.remove(object['file'])
+                return
             self.sendLine(json.dumps(object))
         elif command == 'put':
+            if object['file'] in self.ignore:
+                self.ignore.remove(object['file'])
+                return
             try:
                 file_path = object['file']
                 filename = object['file'].replace(self.files_path, "")
@@ -119,20 +130,6 @@ class Echo(LineReceiver):
     def _display_message(self, message):
         print message
 
-
-    def modification_date(self, filename):
-        t = os.path.getmtime(os.path.join(self.files_path, filename))
-        return t
-        #return datetime.datetime.fromtimestamp(t)
-
-    def get_timestamps(self):
-        timestamps = {}
-        for file in os.listdir(self.files_path):
-            if (not file.endswith("~")):
-                modTime = self.modification_date(file)
-                timestamps[file] = modTime
-                #print self.timestamps
-        return timestamps
 
 
 class EchoClientFactory(ClientFactory):

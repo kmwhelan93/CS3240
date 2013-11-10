@@ -56,9 +56,9 @@ class SyncEventHandler(FileSystemEventHandler):
         #o = {"command": "put", "files": self.timestamps.items()}
 
     def valid_path(self, path):
-        if path.find(".goutputstream") != -1:
+        if path == None:
             return False
-        if path.endswith("~"):
+        if path.find(".goutputstream") != -1:
             return False
         return True
 
