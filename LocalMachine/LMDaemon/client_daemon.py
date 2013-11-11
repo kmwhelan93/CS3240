@@ -7,7 +7,7 @@ import time
 import logging
 
 import json
-from common import get_timestamps
+from common import get_timestamps, get_rel_paths
 
 from twisted.internet.protocol import Protocol, ClientFactory
 from sys import stdout
@@ -51,7 +51,7 @@ class Echo(LineReceiver):
     def get_files(self):
         username = "kevin"
         password = "kevin"
-        timestamps = get_timestamps(self.files_path)
+        timestamps = get_rel_paths(get_timestamps({}. self.files_path), self.files_path)
         object = {"command": "get", "username": username, "password": password, "timestamps": timestamps}
         self.q.put(object)
 
