@@ -70,11 +70,20 @@ def clean_and_split_input(input):
 # While the client calls it just with base_path
 # Needs to get all of the files/directories in current directory. That means it
 # must go more than a level deep (recursively)
-def get_timestamps(base_path):
-    timestamps = {}
+
+def get_timestamps(timestamps, base_path):
     for file in os.listdir(base_path):
         path = os.path.join(base_path, file)
-        modTime = os.path.getmtime(path)
-        timestamps[file] = modTime
-        #print self.timestamps
+        if(os.path.isfile(path)):
+            modTime = os.path.getmtime(path)
+            timestamps[path] = modTime
+        elif(os.path.isdir(path)):
+            get_timestamps(timestamps, path)
+    return timestamps
+
+def get_rel_paths(timestamps, base_path):
+    for path in timestamps.keys():
+        rel_path = os.path.relpath(path, base_path)
+        timestamps[rel_path] = timestamps[path]
+        timestamps.pop(path, timestamps[path])
     return timestamps
