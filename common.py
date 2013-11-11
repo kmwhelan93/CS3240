@@ -81,7 +81,8 @@ def get_timestamps(timestamps, base_path):
             get_timestamps(timestamps, path)
     return timestamps
 
-def get_rel_paths(timestamps, base_path):
+def get_rel_paths(base_path):
+    timestamps = get_timestamps({}, base_path)
     for path in timestamps.keys():
         rel_path = os.path.relpath(path, base_path)
         timestamps[rel_path] = timestamps[path]
