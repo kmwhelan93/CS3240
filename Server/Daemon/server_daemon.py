@@ -152,7 +152,7 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     if (options.path == None):
-        options.path = "/home/student/Documents/CSA/server/"
+        options.path = "/home/student/Documents/CSA/server/" #os.path.join("C:\Users\Venkat\Documents", "test folder")
 
     display_message('Listening on port %d, serving files from directory: %s' % (options.port, options.path))
 
