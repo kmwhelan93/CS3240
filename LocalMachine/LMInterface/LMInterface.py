@@ -19,7 +19,6 @@ class Gui(Frame):
         self.parent = parent
         self.parent.withdraw()
         self.loginWindow()
-
         self.initUI()
         self.lock = False
 
@@ -34,15 +33,18 @@ class Gui(Frame):
         usernameLabel = Label(self.top, text="Username:", padx=5, pady = 5).grid(row=0, columnspan=1)
         passwordLabel = Label(self.top, text="Password:", padx=5, pady = 5).grid(row=1, columnspan=1)
 
-        self.usernameE= Entry(self.top , width = 30).grid(row=0,column=1,columnspan=2)
-        self.passwordE= Entry(self.top, width = 30, show="*").grid(row=1,column=1,columnspan=2)
+        self.usernameE= Entry(self.top , width = 30)
+        self.usernameE.grid(row=0,column=1,columnspan=2)
+        self.passwordE = Entry(self.top, width = 30, show="*")
+        self.passwordE.grid(row=1,column=1,columnspan=2)
+
 
         closeBtn = Button(self.top, text="Cancel", command=self.closeWindow)
         closeBtn.grid(row=3, column = 1, columnspan =1)
 
-        LoginBtn = Button(self.top, text="Login")
-        LoginBtn.grid(row=3 ,column = 2, columnspan = 1,
-            command=self.authenticate(self.usernameE,self.passwordE))
+        LoginBtn = Button(self.top, text="Login", command=lambda:self.login(self.usernameE.get(),self.passwordE.get()))
+        LoginBtn.grid(row=3 ,column = 2, columnspan = 1)
+
 
         self.center(self.top)
 
@@ -60,10 +62,10 @@ class Gui(Frame):
         self.directoryLabel = Label(self.parent, text = "OneDir Directory:").grid(row=2)
         self.autosyncLabel = Label(self.parent, text = "Autosync:").grid(row=3)
 
-        username_var.set(self.govnah.ops.getuserprefs()[1])
-        password_var.set(self.govnah.ops.getuserprefs()[2])
-        directory_var.set(self.govnah.ops.getuserprefs()[4])
-        autosync_var.set(self.govnah.ops.getuserprefs()[4])
+        username_var.set(self.govnah.ops.getuserprefs()[0])
+        password_var.set(self.govnah.ops.getuserprefs()[1])
+        directory_var.set(self.govnah.ops.getuserprefs()[2])
+        autosync_var.set(self.govnah.ops.getuserprefs()[3])
 
         username_entry= Label(self.parent,textvariable=username_var).grid(row=0,column=1,columnspan=2)
         password_entry= Label(self.parent, textvariable=password_var).grid(row=1,column=1,columnspan=2)
@@ -80,22 +82,27 @@ class Gui(Frame):
         signOutBtn = Button(self.parent, text="Sign Out")
         signOutBtn.grid(row=4, column=2)
 
-    def authenticate(self, username, password):
+    def login(self, username, password):
+        print "Trying to Login."
 
-        if ( self.govnah.ops.userExists(username))
-            self.User = self.govnah.ops.getUserRow()
-            if (self.User[2] == password):
+        if self.govnah.ops.authUser(username,password):
+            self.closeWindow()
+            self.parent.deiconify()
+            print "Username and password match."
+
+
+        print "'" + str(password) + "' isn't correct."
+        return
 
 
 
 
-        self.cur.execute("SELECT * FROM Prefs WHERE Username =:Username", {"Username": username} )
-        potentialUser = self.cur.fetchone()
-        if (potentialUser == None):
-            return False
-        if ( potentialUser[1]== username & potentialUser[2]== password):
-            return True
-        return False
+
+
+
+
+
+
 
     def usernameCallBack(self,event):
         self.depositLabel.config(text='change the value')
