@@ -29,13 +29,13 @@ import optparse
 class Echo(LineReceiver):
     delimiter = '\n'
 
-    def __init__(self, q, files_path='/home/student/Documents/CSA/local/', server_ip='127.0.0.1', server_port=1234):
+    def __init__(self, q, ignore, files_path='/home/student/Documents/CSA/local/', server_ip='127.0.0.1', server_port=1234):
         self.q = q
         self.server_ip = server_ip
         self.server_port = server_port
         self.files_path = files_path
         self.connected = False
-        self.ignore = []
+        self.ignore = ignore
 
         self.file_handler = None
         self.file_data = ()
@@ -46,7 +46,7 @@ class Echo(LineReceiver):
         self.task_id = task.LoopingCall(self.callback)
         self.task_id.start(.5)
         #self.setLineMode()
-        task.LoopingCall(self.get_files).start(3)
+        #task.LoopingCall(self.get_files).start(3)
 
     def get_files(self):
         username = "kevin"
@@ -99,8 +99,8 @@ class Echo(LineReceiver):
         object["password"] = "kevin"
         sendObj = {"username": "kevin", "password": "kevin"}
         command = object["command"]
-        if command == 'move' or command=='create' or command=='get':
-            if command=='create' and object['file'] in self.ignore:
+        if command == 'move' or command=='create' or command=='get' or command=="delete":
+            if (command=='create' or command=="delete") and object['file'] in self.ignore:
                 self.ignore.remove(object['file'])
                 return
             self.sendLine(json.dumps(object))
@@ -133,16 +133,17 @@ class Echo(LineReceiver):
 
 
 class EchoClientFactory(ClientFactory):
-    def __init__(self, q, files_path):
+    def __init__(self, q, files_path, ignore):
         self.q = q
         self.files_path = files_path
+        self.ignore = ignore
 
     def startedConnecting(self, connector):
         print 'Started to connect.'
 
     def buildProtocol(self, addr):
         print 'Connected.'
-        self.echo = Echo(self.q, self.files_path)
+        self.echo = Echo(self.q, self.ignore, self.files_path)
         return self.echo
 
     def clientConnectionLost(self, connector, reason):
@@ -153,11 +154,11 @@ class EchoClientFactory(ClientFactory):
 
 files_path = '/home/student/Documents/CSA/local/'
 
-def watchDog(base_path, q):
+def watchDog(base_path, q, ignore):
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
-    event_handler = SyncEventHandler(q, base_path)
+    event_handler = SyncEventHandler(q, base_path, ignore)
     observer = Observer()
     observer.schedule(event_handler, base_path, recursive=True)
     observer.start()
@@ -170,11 +171,12 @@ def watchDog(base_path, q):
 
 
 q = Queue()
+ignore = []
 
-thread.start_new_thread(watchDog, (files_path, q, ))
+thread.start_new_thread(watchDog, (files_path, q, ignore))
 
 
-factory = EchoClientFactory(q, files_path)
+factory = EchoClientFactory(q, files_path, ignore,)
 reactor.connectTCP("localhost", 1234, factory)
 reactor.run()
 
