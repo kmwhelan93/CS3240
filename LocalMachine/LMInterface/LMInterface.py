@@ -4,6 +4,134 @@
 
 from prefOps import localPrefs
 import sys
+from Tkinter import *
+from ttk import Frame, Style
+from idlelib.WidgetRedirector import WidgetRedirector
+import tkMessageBox
+
+from Tkinter import *
+
+class Gui(Frame):
+
+    def __init__(self, parent, govnah):
+        self.govnah = govnah
+        Frame.__init__(self, parent)
+        self.parent = parent
+        self.authenticate()
+        self.initUI()
+        self.lock = False
+
+    def authenticate(self):
+
+        self.lock = True
+        self.top = Toplevel()
+
+        self.top.protocol('WM_DELETE_WINDOW', self.closeWindow)
+        self.top.title("Login to OneDir Preferences")
+
+        usernameLabel = Label(self.top, text="Username:").grid(row=0)
+        passwordLabel = Label(self.top, text="Password:").grid(row=1)
+
+        username_entry= Entry(self.top).grid(row=0,column=1,columnspan=2)
+        password_entry= Entry(self.top, show="*").grid(row=1,column=1,columnspan=2)
+
+        n = Button(self.top, text="Cancel", command=self.closeWindow)
+        n.grid(row=3, column = 0)
+
+        y = Button(self.top, text="Login")
+        y.grid(row=3 ,column = 1)
+
+
+
+        self.center(self.top)
+
+
+    def initUI(self):
+        self.parent.title("OneDir Local User Preferences Interface")
+
+        username_var = StringVar()
+        password_var = StringVar()
+        directory_var = StringVar()
+        autosync_var = IntVar()
+
+        self.usernameLabel = Label(self.parent, text="Username:").grid(row=0)
+        self.passwordLabel = Label(self.parent, text="Password:").grid(row=1)
+        self.directoryLabel = Label(self.parent, text = "OneDir Directory:").grid(row=2)
+        self.autosyncLabel = Label(self.parent, text = "Autosync:").grid(row=3)
+
+        username_var.set(self.govnah.ops.getuserprefs()[1])
+        password_var.set(self.govnah.ops.getuserprefs()[2])
+        directory_var.set(self.govnah.ops.getuserprefs()[4])
+        autosync_var.set(self.govnah.ops.getuserprefs()[4])
+
+        username_entry= Label(self.parent,textvariable=username_var).grid(row=0,column=1,columnspan=2)
+        password_entry= Label(self.parent, textvariable=password_var).grid(row=1,column=1,columnspan=2)
+        directory_entry= Label(self.parent, textvariable=directory_var).grid(row=2,column=1,columnspan=2)
+        autosyncCheck = Checkbutton(self.parent, text="Select to enable Autosync", variable=autosync_var)
+        autosyncCheck.grid(row=3,column=1,columnspan=2)
+
+        chgPasswordBtn = Button(self.parent, text="Change Password", command = self.getNewPw)
+        chgPasswordBtn.grid(row=4, column=0)
+
+        chgDirectoryBtn = Button(self.parent, text="Change Directory")
+        chgDirectoryBtn.grid(row=4, column=1)
+
+        signOutBtn = Button(self.parent, text="Sign Out")
+        signOutBtn.grid(row=4, column=2)
+
+
+    def usernameCallBack(self,event):
+        self.depositLabel.config(text='change the value')
+
+    def getNewPw(self):
+        if self.govnah.ops.authenticateUser:
+            self.unameforpwch = self.govnah.Username
+            self.lock = True
+            self.top = Toplevel()
+            self.top.protocol('WM_DELETE_WINDOW', self.closeWindow)
+            self.top.title = "Change Password"
+            l = Label(self.top, text="Enter a new Password for user: " + self.unameforpwch)
+            l.grid(row=0, columnspan=2)
+            self.entry = Entry(self.top, width=20, bg="white")
+            self.entry.grid(row=1, columnspan=2)
+            n = Button(self.top, text="Cancel", command=self.closeWindow)
+            n.grid(row=2, column=0)
+            y = Button(self.top, text="Proceed", command=self.confirmPwChange)
+            y.grid(row=2, column=1)
+            self.center(self.top)
+
+    def closeWindow(self):
+        self.lock = False
+        self.top.destroy()
+
+
+    def confirmPwChange(self):
+        pw = self.entry.get()
+        if len(pw) > 0:
+            self.govnah.chUserPass(self.unameforpwch, pw)
+            self.top.destroy()
+            self.appendText("Password for " + self.unameforpwch + " successfully changed to " + pw)
+            self.appendText("")
+            self.lock = False
+
+    def center(self, win):
+        win.withdraw()
+        win.update_idletasks()  # Update "requested size" from geometry manager
+
+        x = (win.winfo_screenwidth() - self.parent.winfo_reqwidth()) / 2
+        y = (win.winfo_screenheight() - self.parent.winfo_reqheight()) / 2
+        win.geometry("+%d+%d" % (x, y))
+
+        # This seems to draw the window frame immediately, so only call deiconify()
+        # after setting correct window position
+        win.deiconify()
+
+
+
+
+    def say_hi(self):
+
+        print "hi there, everyone!"
 
 
 class LMInterface:
@@ -11,6 +139,12 @@ class LMInterface:
     def __init__(self):
         self.ops = localPrefs()
         self.Username = self.ops.getUsername()
+        root = Tk()
+        root.geometry("600x300+100+100")
+        self.gui = Gui(root, self )
+        root.mainloop()
+
+
 
 
     def menu(self):

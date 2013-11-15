@@ -36,6 +36,16 @@ class localPrefs:
         Username = row[1]
         return Username
 
+    def authenticateUser(self):
+        return True
+
+
+    def getuserprefs(self):
+        self.cur.execute ("SELECT * FROM Prefs")
+        curUser = self.cur.fetchone()
+        return curUser
+
+
 
     def viewallpreferences(self ):
         self.cur.execute("SELECT * FROM Prefs")
