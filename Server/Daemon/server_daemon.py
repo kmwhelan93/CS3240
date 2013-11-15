@@ -57,6 +57,15 @@ class FileTransferProtocol(basic.LineReceiver):
         if command == 'move':
             print "Receiving move from " + data['src'] + " to " + data['dest']
             os.renames(os.path.join(self.factory.files_path, data["username"], data['src']), os.path.join(self.factory.files_path, data['username'], data['dest']))
+        elif command == "delete":
+            print "Receiving delete of " + data["what"] + " " + data['file']
+            path = os.path.join(self.factory.files_path, data['username'], data["file"])
+            if (os.path.exists(path)):
+                if (data["what"] == "file"):
+                    print "file delete"
+                    os.unlink(path)
+                elif data["what"] == "directory":
+                    os.rmdir(path)
         elif command == 'create':
             print "Receiving create for " + data['file']
             if data['what'] == 'directory':
