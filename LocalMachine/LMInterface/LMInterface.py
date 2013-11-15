@@ -17,31 +17,32 @@ class Gui(Frame):
         self.govnah = govnah
         Frame.__init__(self, parent)
         self.parent = parent
-        self.authenticate()
+        self.parent.withdraw()
+        self.loginWindow()
+
         self.initUI()
         self.lock = False
 
-    def authenticate(self):
+    def loginWindow(self):
 
         self.lock = True
-        self.top = Toplevel()
+        self.top = Toplevel( padx=10, pady = 10)
 
         self.top.protocol('WM_DELETE_WINDOW', self.closeWindow)
         self.top.title("Login to OneDir Preferences")
 
-        usernameLabel = Label(self.top, text="Username:").grid(row=0)
-        passwordLabel = Label(self.top, text="Password:").grid(row=1)
+        usernameLabel = Label(self.top, text="Username:", padx=5, pady = 5).grid(row=0, columnspan=1)
+        passwordLabel = Label(self.top, text="Password:", padx=5, pady = 5).grid(row=1, columnspan=1)
 
-        username_entry= Entry(self.top).grid(row=0,column=1,columnspan=2)
-        password_entry= Entry(self.top, show="*").grid(row=1,column=1,columnspan=2)
+        self.usernameE= Entry(self.top , width = 30).grid(row=0,column=1,columnspan=2)
+        self.passwordE= Entry(self.top, width = 30, show="*").grid(row=1,column=1,columnspan=2)
 
-        n = Button(self.top, text="Cancel", command=self.closeWindow)
-        n.grid(row=3, column = 0)
+        closeBtn = Button(self.top, text="Cancel", command=self.closeWindow)
+        closeBtn.grid(row=3, column = 1, columnspan =1)
 
-        y = Button(self.top, text="Login")
-        y.grid(row=3 ,column = 1)
-
-
+        LoginBtn = Button(self.top, text="Login")
+        LoginBtn.grid(row=3 ,column = 2, columnspan = 1,
+            command=self.authenticate(self.usernameE,self.passwordE))
 
         self.center(self.top)
 
@@ -79,6 +80,22 @@ class Gui(Frame):
         signOutBtn = Button(self.parent, text="Sign Out")
         signOutBtn.grid(row=4, column=2)
 
+    def authenticate(self, username, password):
+
+        if ( self.govnah.ops.userExists(username))
+            self.User = self.govnah.ops.getUserRow()
+            if (self.User[2] == password):
+
+
+
+
+        self.cur.execute("SELECT * FROM Prefs WHERE Username =:Username", {"Username": username} )
+        potentialUser = self.cur.fetchone()
+        if (potentialUser == None):
+            return False
+        if ( potentialUser[1]== username & potentialUser[2]== password):
+            return True
+        return False
 
     def usernameCallBack(self,event):
         self.depositLabel.config(text='change the value')

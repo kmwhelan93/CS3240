@@ -30,14 +30,27 @@ class localPrefs:
 
         self.con.commit()
 
+    def userExists(self, username):
+
+        self.cur.execute("SELECT * FROM Prefs WHERE Username =:Username", {"Username": username} )
+        result = self.cur.fetchall()
+        if(len(result) ==1):
+            return True
+        else:
+            return False
+
+    def getUserRow(self, username):
+
+        self.cur.execute("SELECT * FROM Prefs WHERE Username =:Username", {"Username": username} )
+        row = self.cur.fetchone()
+        return row
+
     def getUsername(self):
         self.cur.execute ("SELECT * FROM Prefs")
         row = self.cur.fetchone()
         Username = row[1]
         return Username
 
-    def authenticateUser(self):
-        return True
 
 
     def getuserprefs(self):
