@@ -29,6 +29,8 @@ class Gui(Frame):
 
         self.top.protocol('WM_DELETE_WINDOW', self.closeWindow)
         self.top.title("Login to OneDir Preferences")
+        self.top.loginstatus_var = StringVar()
+        self.top.loginstatus_var.set("Enter you Username and Password Above")
 
         usernameLabel = Label(self.top, text="Username:", padx=5, pady = 5).grid(row=0, columnspan=1)
         passwordLabel = Label(self.top, text="Password:", padx=5, pady = 5).grid(row=1, columnspan=1)
@@ -38,6 +40,11 @@ class Gui(Frame):
         self.passwordE = Entry(self.top, width = 30, show="*")
         self.passwordE.grid(row=1,column=1,columnspan=2)
 
+        self.top.status_entry= Label(self.top, padx=5, pady = 5, textvariable=self.top.loginstatus_var)
+        self.top.status_entry.grid(row=2,column=0,columnspan=3)
+
+        SignUpBtn = Button(self.top, text="Sign Up", command=self.closeWindow)
+        SignUpBtn.grid(row=3, column = 0, columnspan =1)
 
         closeBtn = Button(self.top, text="Cancel", command=self.closeWindow)
         closeBtn.grid(row=3, column = 1, columnspan =1)
@@ -83,26 +90,21 @@ class Gui(Frame):
         signOutBtn.grid(row=4, column=2)
 
     def login(self, username, password):
-        print "Trying to Login."
+        if ( self.govnah.ops.userExists(username) == False):
+            self.top.loginstatus_var.set("No record of this username on this machine.")
+            self.top.status_entry.config(fg="blue")
+            return
 
         if self.govnah.ops.authUser(username,password):
+            self.top.loginstatus_var.set("Username and password  match.")
+            self.top.status_entry.config(fg="green")
             self.closeWindow()
             self.parent.deiconify()
-            print "Username and password match."
+            return
 
-
-        print "'" + str(password) + "' isn't correct."
+        self.top.loginstatus_var.set("Username and password don't match.")
+        self.top.status_entry.config(fg="red")
         return
-
-
-
-
-
-
-
-
-
-
 
     def usernameCallBack(self,event):
         self.depositLabel.config(text='change the value')
