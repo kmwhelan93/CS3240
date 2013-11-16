@@ -46,7 +46,7 @@ class Echo(LineReceiver):
         self.task_id = task.LoopingCall(self.callback)
         self.task_id.start(.5)
         #self.setLineMode()
-        task.LoopingCall(self.get_files).start(3)
+        #task.LoopingCall(self.get_files).start(3)
 
     def get_files(self):
         username = "kevin"

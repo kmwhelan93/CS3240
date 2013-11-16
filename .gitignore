@@ -1,6 +1,5 @@
 .idea/*
 .idea
-.iml
 *.pyc
-prefs.db
-Server/.oneDir.db
+*.db
+*~
