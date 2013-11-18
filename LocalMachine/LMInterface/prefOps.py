@@ -48,9 +48,9 @@ class localPrefs:
         return row
 
     def updatePassword(self, username, password):
-        if self.userExists(userName):
-            self.hash256.update(password)
-            self.cur.execute("UPDATE Prefs SET password=? WHERE username=?", [self.hash256.hexdigest(),username])
+        if self.userExists(username):
+            digest = hashlib.sha256(password).hexdigest()
+            self.cur.execute("UPDATE Prefs SET password=? WHERE username=?", [digest,username])
             self.con.commit()
             return True
         else:
@@ -69,8 +69,9 @@ class localPrefs:
     def authUser(self, username, password):
         self.cur.execute("SELECT * FROM Prefs WHERE Username =:Username", {"Username": username} )
         userData = self.cur.fetchone()
-        self.hash256.update(password)
-        if userData[1] == self.hash256.hexdigest():
+        digest = hashlib.sha256(password).hexdigest()
+        #self.hash256.update(password)
+        if userData[1] == digest:
             print "The username and password match."
             return True
         print userData[0]
@@ -113,6 +114,8 @@ class localPrefs:
         print ""
         return
 
+
+
     def changepassword(self, Username):
 
         self.cur.execute("SELECT * FROM Prefs WHERE Username =:Username", {"Username": Username} )
@@ -122,7 +125,7 @@ class localPrefs:
         attempts = 5
 
         while ( oldpwd != curUser[1]):
-            
+
             print "This password doesn't match your account. Please try again."
             attempts = attempts -1
             if ( attempts == 0):
@@ -162,26 +165,15 @@ class localPrefs:
         print ("\nAutoSync setting has been turned off.\n")
         return
 
-    def changedirectory(self,Username):
+    def changedirectory(self,Username, directory):
 
-        self.cur.execute("SELECT * FROM Prefs WHERE Username =:Username", {"Username": Username})
-        curUser = self.cur.fetchone()
+        if (os.path.isdir(directory) == False):
+                return False
+        Directory = directory
+        self.cur.execute("UPDATE Prefs SET Directory = ? WHERE Username = ?", (Directory, Username))
+        self.con.commit()
+        return True
 
-        print ("\nYour current OneDir directory is : " + curUser[3])
-        answer = raw_input("Would you like to change this directory? (Y/N): ")
-        if ( answer == 'Y' or answer == 'y') :
-            newdir = raw_input('Alright. Enter new OneDir directory path:')
-            if (os.path.isdir(newdir) == False):
-                print "Sorry. This directory path doesn't seem to exist.\n"
-                return
-
-            Directory = newdir
-            self.cur.execute("UPDATE Prefs SET Directory = ? WHERE Username = ?", (Directory, Username))
-            print "Alright. Your OneDir Directory has been changed."
-            self.con.commit()
-            return
-        print "Ok. Your OneDir Directory has not been changed.\n"
-        return
 
 
 
