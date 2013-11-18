@@ -67,7 +67,7 @@ class Gui(Frame):
         self.directoryE.grid(row=5,column=1,columnspan=2)
 
         SignUpBtn = Button(self.top, text="Sign Up" , width = 40,
-                command=lambda:self.signup(self.usernameE.get(),self.passwordE.get(),self.directoryEget()))
+                command=lambda:self.signup(self.usernameE.get(),self.passwordE.get(),self.directoryE.get()))
         SignUpBtn.grid(row=6, column = 0, columnspan =3)
 
 
@@ -91,10 +91,10 @@ class Gui(Frame):
         self.autosyncLabel = Label(self.parent, text = "Autosync:", padx=5, pady = 5)
         self.autosyncLabel.grid(row=3)
 
-        self.username_var.set(self.govnah.ops.getuserprefs()[0])
-        self.password_var.set(self.govnah.ops.getuserprefs()[1])
-        self.directory_var.set(self.govnah.ops.getuserprefs()[3])
-        self.autosync_var.set(self.govnah.ops.getuserprefs()[2])
+        self.username_var.set(self.userrow[0])
+        self.password_var.set(self.userrow[1])
+        self.directory_var.set(self.userrow[3])
+        self.autosync_var.set(self.userrow[2])
 
         username_entry= Entry(self.parent,textvariable=self.username_var, width = 40, state = DISABLED)
         username_entry.grid(row=0,column=1,columnspan=2)
@@ -114,14 +114,14 @@ class Gui(Frame):
         self.chgDirectoryBtn = Button(self.parent, text="Change Directory", command = self.directoryWindow)
         self.chgDirectoryBtn.grid(row=4, column=1)
 
-        exitBtn = Button(self.parent, text="Exit", width = 10, command = lambda:self.closeWindow())
-        exitBtn.grid(row=4, column=2)
+        self.exitBtn = Button(self.parent, text="Exit", width = 10, command = lambda:self.closeWindow())
+        self.exitBtn.grid(row=4, column=2)
         self.center(self.parent)
 
 
 
     def login(self, username, password):
-        if ( self.govnah.ops.userExists(username) == False):
+        if ( self.govnah.ops.userExistsLocally(username) == False):
             self.top.loginstatus_var.set("No record of this username on this machine. You must set up your directory first.")
             self.top.login_entry.config(fg="blue")
             self.top.signupstatus_var.set("Enter a valid directory path to go along with desired username and  password. ")
@@ -132,7 +132,7 @@ class Gui(Frame):
             self.top.loginstatus_var.set("Username and password  match.")
             self.top.login_entry.config(fg="green")
             self.userrow = self.govnah.ops.getUserRow(username)
-            self.closeWindow()
+            self.closeLogWindow()
             self.parent.deiconify()
             self.initUI()
             return
@@ -142,14 +142,24 @@ class Gui(Frame):
         return
 
     def signup(self, username, password, directory):
-        if ( self.govnah.ops.userExists(username) == True):
+        if ( self.govnah.ops.userExistsLocally(username) == True):
             self.top.loginstatus_var.set("That username has already been taken. Try another.")
             self.top.login_entry.config(fg="red")
             self.top.signupstatus_var.set("Enter a valid directory path to go along with desired username and password. ")
             self.top.signup_entry.config(fg="red")
             return
+        if ( (self.govnah.ops.userExistsGlobally(username)== False) &
+                 ( self.govnah.ops.validDirPath(directory) == True) & (len(password) > 0)):
+            self.govnah.ops.createUser(username, password, directory)
+            self.top.signupstatus_var.set("You have successfully set up you OneDir directory on this machine.")
+            self.top.signup_entry.config(fg="green")
+            self.userrow = self.govnah.ops.getUserRow(username)
+            self.closeLogWindow()
+            self.parent.deiconify()
+            self.initUI()
+            return
 
-        return
+
 
 
     def directoryWindow(self):
@@ -172,7 +182,7 @@ class Gui(Frame):
         curDir_entry= Entry(self.dwin, textvariable=self.directory_var, width = 30, state = DISABLED)
         curDir_entry.grid(row=1,column=1,columnspan=2)
 
-        newDirectory = Label(self.dwin, text= "New OneDir Directory:", padx=5, pady = 5)
+        newDirectory = Label(self.dwin, text= "New OneDir Directory:")
         newDirectory.grid(row = 2, columnspan=1,)
         newDir_entry= Entry(self.dwin,  width = 30)
         newDir_entry.grid(row=2,column=1,columnspan=2)
@@ -250,29 +260,14 @@ class Gui(Frame):
             self.closePwdWindow()
             return
 
-
-
-
-    def getNewPw(self):
-        if self.govnah.ops.authenticateUser:
-            self.unameforpwch = self.govnah.Username
-            self.lock = True
-            self.top = Toplevel()
-            self.top.protocol('WM_DELETE_WINDOW', self.closeWindow)
-            self.top.title = "Change Password"
-            l = Label(self.top, text="Enter a new Password for user: " + self.unameforpwch)
-            l.grid(row=0, columnspan=2)
-            self.entry = Entry(self.top, width=20, bg="white")
-            self.entry.grid(row=1, columnspan=2)
-            n = Button(self.top, text="Cancel", command=self.closeWindow)
-            n.grid(row=2, column=0)
-            y = Button(self.top, text="Proceed", command=self.confirmPwChange)
-            y.grid(row=2, column=1)
-            self.center(self.top)
-
     def closeWindow(self):
         self.lock = False
-        self.destroy()
+        self.parent.destroy()
+        return
+
+    def closeLogWindow(self):
+        self.top.destroy()
+        return
 
     def closePwdWindow(self):
         self.lock = False
@@ -286,15 +281,6 @@ class Gui(Frame):
         self.dwin.destroy()
         return
 
-
-    def confirmPwChange(self):
-        pw = self.entry.get()
-        if len(pw) > 0:
-            self.govnah.chUserPass(self.unameforpwch, pw)
-            self.top.destroy()
-            self.appendText("Password for " + self.unameforpwch + " successfully changed to " + pw)
-            self.appendText("")
-            self.lock = False
 
     def center(self, win):
         win.withdraw()
@@ -352,4 +338,3 @@ class LMInterface:
 
 if __name__== '__main__':
     LMI = LMInterface()
-    LMI.start()
