@@ -169,7 +169,7 @@ if __name__ == '__main__':
     reactor.run()
 
 ### SERVER DATABASE OPERATIONS... INSERTED BY JUSTIN ###
-db = Server.DbOps.DbOps()
+db = Server.DbOps.DbOps(options.path)
 def auth(username, password):
     return db.authUser(username, password)
 
