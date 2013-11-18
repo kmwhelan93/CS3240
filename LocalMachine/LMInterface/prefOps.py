@@ -32,7 +32,7 @@ class localPrefs:
 
         self.con.commit()
 
-    def userExists(self, username):
+    def userExistsLocally(self, username):
 
         self.cur.execute("SELECT * FROM Prefs WHERE Username =:Username", {"Username": username} )
         result = self.cur.fetchall()
@@ -41,6 +41,10 @@ class localPrefs:
         else:
             return False
 
+    def userExistsGlobally(self, username):
+        #code to be added.
+        return False
+
     def getUserRow(self, username):
 
         self.cur.execute("SELECT * FROM Prefs WHERE Username =:Username", {"Username": username} )
@@ -48,7 +52,7 @@ class localPrefs:
         return row
 
     def updatePassword(self, username, password):
-        if self.userExists(username):
+        if self.userExistsLocally(username):
             digest = hashlib.sha256(password).hexdigest()
             self.cur.execute("UPDATE Prefs SET password=? WHERE username=?", [digest,username])
             self.con.commit()
@@ -57,10 +61,10 @@ class localPrefs:
             return False
 
     def createUser(self, username, password, directory):
-        if not self.userExists(username):
-            self.hash256.update(password)
+        if not self.userExistsLocally(username):
+            digest = hashlib.sha256(password).hexdigest()
             self.cur.execute("INSERT INTO Prefs VALUES(?,?,?,?)",
-                [ username, self.hash256.hexdigest(),  1 , directory])
+                [ username, digest,  1 , directory])
             self.con.commit()
             return True
         else:
@@ -165,9 +169,14 @@ class localPrefs:
         print ("\nAutoSync setting has been turned off.\n")
         return
 
+    def validDirPath(self, directory):
+        if (os.path.isdir(directory) == False):
+                return False
+        return True
+
     def changedirectory(self,Username, directory):
 
-        if (os.path.isdir(directory) == False):
+        if (self.validDirPath(directory)==False):
                 return False
         Directory = directory
         self.cur.execute("UPDATE Prefs SET Directory = ? WHERE Username = ?", (Directory, Username))
