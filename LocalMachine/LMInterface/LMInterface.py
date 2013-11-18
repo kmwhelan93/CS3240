@@ -114,8 +114,8 @@ class Gui(Frame):
         self.chgDirectoryBtn = Button(self.parent, text="Change Directory", command = self.directoryWindow)
         self.chgDirectoryBtn.grid(row=4, column=1)
 
-        exitBtn = Button(self.parent, text="Exit", width = 10, command = lambda:self.closeWindow())
-        exitBtn.grid(row=4, column=2)
+        self.exitBtn = Button(self.parent, text="Exit", width = 10, command = lambda:self.closeWindow())
+        self.exitBtn.grid(row=4, column=2)
         self.center(self.parent)
 
 
@@ -132,7 +132,7 @@ class Gui(Frame):
             self.top.loginstatus_var.set("Username and password  match.")
             self.top.login_entry.config(fg="green")
             self.userrow = self.govnah.ops.getUserRow(username)
-            self.closeWindow()
+            self.closeLogWindow()
             self.parent.deiconify()
             self.initUI()
             return
@@ -172,7 +172,7 @@ class Gui(Frame):
         curDir_entry= Entry(self.dwin, textvariable=self.directory_var, width = 30, state = DISABLED)
         curDir_entry.grid(row=1,column=1,columnspan=2)
 
-        newDirectory = Label(self.dwin, text= "New OneDir Directory:", padx=5, pady = 5)
+        newDirectory = Label(self.dwin, text= "New OneDir Directory:")
         newDirectory.grid(row = 2, columnspan=1,)
         newDir_entry= Entry(self.dwin,  width = 30)
         newDir_entry.grid(row=2,column=1,columnspan=2)
@@ -272,7 +272,12 @@ class Gui(Frame):
 
     def closeWindow(self):
         self.lock = False
-        self.destroy()
+        self.parent.destroy()
+        return
+
+    def closeLogWindow(self):
+        self.top.destroy()
+        return
 
     def closePwdWindow(self):
         self.lock = False
@@ -352,4 +357,3 @@ class LMInterface:
 
 if __name__== '__main__':
     LMI = LMInterface()
-    LMI.start()
