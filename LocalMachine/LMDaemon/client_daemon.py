@@ -39,6 +39,7 @@ class Echo(LineReceiver):
 
         self.file_handler = None
         self.file_data = ()
+        self.command_out = False
 
     def connectionMade(self):
 
@@ -46,7 +47,7 @@ class Echo(LineReceiver):
         self.task_id = task.LoopingCall(self.callback)
         self.task_id.start(.5)
         #self.setLineMode()
-        #task.LoopingCall(self.get_files).start(3)
+        task.LoopingCall(self.get_files).start(3)
 
     def get_files(self):
         username = "kevin"
@@ -57,44 +58,47 @@ class Echo(LineReceiver):
 
     def callback(self):
         #print 'callback'
-        if (self.connected == True and self.q.qsize() > 0):
-            next_command = self.q.get()
-            self._sendCommand(next_command)
-            #self._sendCommand(next_command)
+        if (self.connected == True and self.command_out == False and self.q.qsize() > 0):
+            print 'sending command'
+            self._sendCommand(self.q.get())
 
     def dataReceived(self, data):
+        print 'data received ' + data
         if (data == "init\n"):
             self.connected = True
         else:
             files = json.loads(data.strip())
+            if "directories" in files.keys():
             # get directories first
-            files['directories'].sort()
-            directories = []
-            for file in files['remove']:
-                path = os.path.join(self.files_path, file)
-                if os.path.isfile(path):
-                    os.unlink(path)
-                else:
-                    directories.append(path)
-            directories.sort(reverse=True)
-            for dir in directories:
-                if os.path.isdir(dir):
-                    shutil.rmtree(dir)
+                files['directories'].sort()
+                directories = []
+                for file in files['remove']:
+                    path = os.path.join(self.files_path, file)
+                    if os.path.isfile(path):
+                        os.unlink(path)
+                    else:
+                        directories.append(path)
+                directories.sort(reverse=True)
+                for dir in directories:
+                    if os.path.isdir(dir):
+                        shutil.rmtree(dir)
 
-            for directory in files['directories']:
-                path = os.path.join(self.files_path, directory)
-                if not os.path.exists(path):
-                    os.mkdir(path)
-                self.ignore.append(path)
-            # because files need the directories to exist
-            for file, content in files['files'].iteritems():
-                path = os.path.join(self.files_path, file)
-                f = open(path, 'w')
-                f.write(content['content'] +'')
-                f.close()
-                self.ignore.append(path)
+                for directory in files['directories']:
+                    path = os.path.join(self.files_path, directory)
+                    if not os.path.exists(path):
+                        os.mkdir(path)
+                    self.ignore.append(path)
+                # because files need the directories to exist
+                for file, content in files['files'].iteritems():
+                    path = os.path.join(self.files_path, file)
+                    f = open(path, 'w')
+                    f.write(content['content'] +'')
+                    f.close()
+                    self.ignore.append(path)
+        self.command_out = False
 
     def _sendCommand(self, object):
+        self.command_out = True
         object["username"] = "kevin"
         object["password"] = "kevin"
         sendObj = {"username": "kevin", "password": "kevin"}
@@ -102,21 +106,25 @@ class Echo(LineReceiver):
         if command == 'move' or command=='create' or command=='get' or command=="delete":
             if (command=='create' or command=="delete") and object['file'] in self.ignore:
                 self.ignore.remove(object['file'])
+                self.command_out = False
                 return
             self.sendLine(json.dumps(object))
         elif command == 'put':
             if object['file'] in self.ignore:
                 self.ignore.remove(object['file'])
+                self.command_out = False
                 return
             try:
                 file_path = object['file']
                 filename = object['file'].replace(self.files_path, "")
             except IndexError:
                 self._display_message('Missing local file path or remote file name')
+                self.command_out = False
                 return
 
             if not os.path.isfile(file_path):
                 self._display_message('This file does not exist')
+                self.command_out = False
                 return
 
             file_size = os.path.getsize(file_path) / 1024
