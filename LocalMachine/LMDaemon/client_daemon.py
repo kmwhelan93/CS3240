@@ -141,17 +141,18 @@ class Echo(LineReceiver):
 
 
 class EchoClientFactory(ClientFactory):
-    def __init__(self, q, files_path, ignore):
+    def __init__(self, q, files_path, ignore, server_ip):
         self.q = q
         self.files_path = files_path
         self.ignore = ignore
+        self.server_ip = server_ip
 
     def startedConnecting(self, connector):
         print 'Started to connect.'
 
     def buildProtocol(self, addr):
         print 'Connected.'
-        self.echo = Echo(self.q, self.ignore, self.files_path)
+        self.echo = Echo(self.q, self.ignore, self.files_path, self.server_ip)
         return self.echo
 
     def clientConnectionLost(self, connector, reason):
@@ -161,6 +162,8 @@ class EchoClientFactory(ClientFactory):
         print 'Connection failed. Reason:', reason
 
 files_path = '/home/student/Documents/CSA/local/'
+server_ip = '172.27.108.88'
+#172.27.108.88
 
 def watchDog(base_path, q, ignore):
     logging.basicConfig(level=logging.INFO,
@@ -184,8 +187,9 @@ ignore = []
 thread.start_new_thread(watchDog, (files_path, q, ignore))
 
 
-factory = EchoClientFactory(q, files_path, ignore,)
-reactor.connectTCP("localhost", 1234, factory)
+factory = EchoClientFactory(q, files_path, ignore, server_ip = server_ip, )
+#reactor.connectTCP("localhost", 1234, factory)
+reactor.connectTCP(server_ip, 1234, factory)
 reactor.run()
 
 
