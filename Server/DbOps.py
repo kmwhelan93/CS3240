@@ -2,12 +2,19 @@ __author__ = 'Justin Ingram'
 
 import sqlite3, hashlib
 from datetime import datetime
+import os
 
 class DbOps:
 
-    def __init__(self):
+    def __init__(self, path):
         # Connect to the database. Name should be preceeded with a . so its a hidden file
-        self.db = sqlite3.connect('../.oneDir.db')
+        if not path:
+            self.path = str(os.getenv("HOME")) + "/OneDir"
+        else:
+            self.path = path
+
+        print self.path + '/.oneDir.db'
+        self.db = sqlite3.connect(self.path + '/.oneDir.db')
         # Get a cursor object for operations
         self.cur = self.db.cursor()
         # Get a SHA3 256 bit hasher for storing passwords
@@ -16,8 +23,9 @@ class DbOps:
 
     def setup(self):
         # A method to make sure that all our tables in the database are initialized and ready to go
-        self.cur.execute("CREATE TABLE IF NOT EXISTS user(id INTEGER PRIMARY KEY ASC, username TEXT, password TEXT, ts TEXT)")
+        self.cur.execute("CREATE TABLE IF NOT EXISTS user(id INTEGER PRIMARY KEY ASC, username TEXT, password TEXT, ts TEXT, UNIQUE(username) ON CONFLICT IGNORE)")
         self.cur.execute("CREATE TABLE IF NOT EXISTS transactions(id INTEGER PRIMARY KEY ASC, username TEXT, type TEXT, path TEXT, ts TEXT)")
+
         # before exiting method
         self.db.commit()
 
@@ -77,7 +85,53 @@ class DbOps:
 
     def start(self):
         self.createUser("zebra", "hello")
+        self.createUser("Justin", "hello")
 
+
+class ServerPrefs:
+
+
+    def __init__(self):
+        self.db = sqlite3.connect('.serverPrefs.db')
+        # Get a cursor object for operations
+        self.cur = self.db.cursor()
+        self.setup()
+
+    def setup(self):
+        self.cur.execute("CREATE TABLE IF NOT EXISTS serveropts(option TEXT, optval TEXT, UNIQUE(option) ON CONFLICT REPLACE)")
+        self.checkInitPath()
+
+    def checkInitPath(self):
+        if not self.optionExists("path"):
+            self.path = str(os.getenv("HOME")) + "/OneDir"
+            self.setOption("path", self.path)
+            if not os.path.exists(self.path):
+                os.mkdir(self.path)
+        else:
+            self.path = self.getOption("path")
+
+    def checkPath(self, path):
+        if not os.path.exists(path):
+            os.mkdir(path)
+        self.path = path
+
+    def setOption(self, option, value):
+        self.cur.execute("INSERT OR REPLACE INTO serveropts (option, optval) values (?,?)", [option, value])
+        self.db.commit()
+
+    def optionExists(self, option):
+        self.cur.execute("SELECT * FROM serveropts WHERE option=?",[option])
+        result = self.cur.fetchall()
+        if(len(result) > 0):
+            return True
+        else:
+            return False
+
+    def getOption(self, option):
+        if self.optionExists(option):
+            self.cur.execute("SELECT * FROM serveropts WHERE option=?", [option])
+            result = self.cur.fetchone()
+            return result[1]
 
 if __name__== '__main__':
      odsd = DbOps()

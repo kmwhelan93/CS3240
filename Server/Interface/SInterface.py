@@ -7,6 +7,8 @@ from idlelib.WidgetRedirector import WidgetRedirector
 import tkMessageBox
 from PIL import Image, ImageTk
 import tkFont
+import os
+import subprocess
 
 class ReadOnlyText(Text):
     def __init__(self, *args, **kwargs):
@@ -74,21 +76,35 @@ class View(Frame):
         delete = Button(self.parent, text="Delete", command=self.delUser)
         delete.grid(row=5, column=2)
 
-        start = Button(self.parent, text="Start Server Daemon")
-        start.grid(row=6, column=0, columnspan=3)
+        start = Button(self.parent, text="Start Server Daemon", command=self.govnah.startServer)
+        start.grid(row=8, column=0, columnspan=3)
 
         self.uinfo = Label(self.parent, text="")
         self.uinfo.grid(row=4, column=1, columnspan=2)
 
+        pathLabel = Label(self.parent, text="OneDir Path:")
+        pathLabel.grid(row=6, column=0)
 
-        self.img = ImageTk.PhotoImage(file='../../img/logo50.png')
+        self.path = self.govnah.path
+        self.pathEntry = Entry(self.parent, width=20, bg="white")
+        self.pathEntry.insert(END, self.path)
+        self.pathEntry.grid(row = 6, column=1, columnspan=2)
+
+        performChange = Button(self.parent, text="Change OneDir\nDirectory", command=self.chngPath)
+        performChange.grid(row=7, column=1, columnspan=2)
+
+        self.img = ImageTk.PhotoImage(file='img/logo50.png')
         logoLabel = Label(self.parent, image=self.img)
-        logoLabel.grid(row=7, column=0)
+        logoLabel.grid(row=9, column=0)
 
         slogan = Label(self.parent, text="This Directory\nis a OneDir!", font=("Helvetica", 10, "bold italic"))
-        slogan.grid(row = 7, column=1, columnspan=2)
+        slogan.grid(row = 9, column=1, columnspan=2)
 
         self.log.insert(END, "Howdy Admin, Welcome to the Server Interface \n\n")
+
+    def chngPath(self):
+        self.path = self.pathEntry.get()
+        self.govnah.changeDir(self.path)
 
     def valid(self, d, i, P, s, S, v, V, W):
         if not self.lock:
@@ -166,7 +182,6 @@ class View(Frame):
             self.appendText("")
             self.lock = False
 
-
     def center(self, win):
         win.withdraw()
         win.update_idletasks()  # Update "requested size" from geometry manager
@@ -183,10 +198,12 @@ class View(Frame):
 class SInterface():
 
     def __init__(self):
-        self.db = DbOps.DbOps()
+        self.prefs = DbOps.ServerPrefs()
+        self.path = self.prefs.getOption("path")
+        self.db = DbOps.DbOps(self.path)
         root = Tk()
         root.geometry("1150x400+100+100")
-        img = ImageTk.PhotoImage(file='../../img/logo50.png')
+        img = ImageTk.PhotoImage(file='img/logo50.png')
         root.tk.call('wm', 'iconphoto', root._w, img)
         self.view = View(root, self)
         root.mainloop()
@@ -229,6 +246,28 @@ class SInterface():
     def chUserPass(self, usr, pw):
         if self.db.userExists(usr):
             self.db.updatePassword(usr, pw)
+
+    def setOption(self, option, value):
+        if self.prefs.optionExists(option):
+            self.prefs.setOption(option, value)
+
+    def changeDir(self, path):
+        self.prefs.checkPath(path)
+        self.prefs.setOption("path", path)
+        self.path = path
+        self.db = DbOps.DbOps(self.path)
+
+    def startServer(self):
+        #print os.getcwd()
+
+        #subprocess.call(["python", "Server/Daemon/server_daemon.py", "--path", self.path, "&"], shell=False)
+        self.view.appendText("Start Daemon: " + "")
+        self.daemon = subprocess.Popen(["python", "Server/Daemon/server_daemon.py", "--path", self.path])
+        #self.view.appendText(self.daemon.stdout.read())
+        #self.dview = Toplevel()
+        #self.dview.title = "OneDir Server Daemon at " + self.path
+        #self.sdlog = ReadOnlyText(self.dview, bg="white", undo=False, width=120)
+        #self.sdlog.pack(self.dview)
 
     def start(self):
         while True:

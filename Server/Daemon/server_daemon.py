@@ -14,7 +14,11 @@
 # - Python >= 2.5
 # - Twisted (http://twistedmatrix.com/)
 
+'''TODO: FIX CTRL + Z moving a folder out of another folder -- right now deletes existing folder
+EX: folder structure first, first/second, first/second/third, ctrl+z --> first, second, second/third'''
+
 import os
+import shutil
 import optparse
 from common import get_timestamps
 
@@ -49,23 +53,26 @@ class FileTransferProtocol(basic.LineReceiver):
     def lineReceived(self, line):
         data = json.loads(line)
         command = data["command"]
+        retVal = {"done": True}
         print line
         if not command in COMMANDS:
-            self.transport.write('Invalid command\n')
-            self.transport.write('ENDMSG\n')
+            self.sendLine(json.dumps(retVal))
             return
         if command == 'move':
             print "Receiving move from " + data['src'] + " to " + data['dest']
-            os.renames(os.path.join(self.factory.files_path, data["username"], data['src']), os.path.join(self.factory.files_path, data['username'], data['dest']))
+            if os.path.exists(os.path.join(self.factory.files_path, data["username"], data['src'])):
+                os.renames(os.path.join(self.factory.files_path, data["username"], data['src']), os.path.join(self.factory.files_path, data['username'], data['dest']))
+            self.sendLine(json.dumps(retVal))
+
         elif command == "delete":
             print "Receiving delete of " + data["what"] + " " + data['file']
             path = os.path.join(self.factory.files_path, data['username'], data["file"])
             if (os.path.exists(path)):
                 if (data["what"] == "file"):
-                    print "file delete"
                     os.unlink(path)
                 elif data["what"] == "directory":
-                    os.rmdir(path)
+                    shutil.rmtree(path)
+            self.sendLine(json.dumps(retVal))
         elif command == 'create':
             print "Receiving create for " + data['file']
             if data['what'] == 'directory':
@@ -74,9 +81,11 @@ class FileTransferProtocol(basic.LineReceiver):
                     os.mkdir(path)
             else:
                 os.mknod(os.path.join(self.factory.files_path, data["username"], data['file']))
+            self.sendLine(json.dumps(retVal))
         elif command == 'get':
+            #TODO GET DOESNT WORK FOR DIRECTORIES
             timestamps = get_timestamps(os.path.join(self.factory.files_path, data['username']))
-            retVal = {'files': {}, 'directories': [], "remove": []}
+            retVal = dict(retVal.items() + {'files': {}, 'directories': [], "remove": []}.items())
             for file, stamp in timestamps.iteritems():
                 if (not file in data['timestamps'] or stamp > data['timestamps'][file]):
                     path = os.path.join(self.factory.files_path, data['username'], file)
@@ -89,6 +98,7 @@ class FileTransferProtocol(basic.LineReceiver):
             for file, stamp in data['timestamps'].iteritems():
                 if not file in timestamps:
                     retVal['remove'].append(file)
+            #print retVal
             self.sendLine(json.dumps(retVal))
         elif command == 'put':
             try:
@@ -104,16 +114,14 @@ class FileTransferProtocol(basic.LineReceiver):
             f = open(file_path, 'w')
             f.write(data['content'])
             f.close()
+            self.sendLine(json.dumps(retVal))
 
         elif command == 'help':
-            self.transport.write('Available commands:\n\n')
-
-            for key, value in COMMANDS.iteritems():
-                self.transport.write('%s - %s\n' % (value[0], value[1]))
-
-            self.transport.write('ENDMSG\n')
+            self.sendLine(json.dumps(retVal))
         elif command == 'quit':
             self.transport.loseConnection()
+        else:
+            self.sendLine(json.dumps(retVal))
 
     def _get_file_list(self):
         """ Returns a list of the files in the specified directory as a dictionary:
@@ -169,7 +177,7 @@ if __name__ == '__main__':
     reactor.run()
 
 ### SERVER DATABASE OPERATIONS... INSERTED BY JUSTIN ###
-db = Server.DbOps.DbOps()
+db = Server.DbOps.DbOps(options.path)
 def auth(username, password):
     return db.authUser(username, password)
 
