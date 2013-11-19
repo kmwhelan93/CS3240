@@ -20,6 +20,7 @@ class DbOps:
         # Get a SHA3 256 bit hasher for storing passwords
         self.hash256 = hashlib.sha256()
         self.setup()
+        self.start()
 
     def setup(self):
         # A method to make sure that all our tables in the database are initialized and ready to go

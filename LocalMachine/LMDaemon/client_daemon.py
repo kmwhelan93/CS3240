@@ -161,8 +161,8 @@ class EchoClientFactory(ClientFactory):
     def clientConnectionFailed(self, connector, reason):
         print 'Connection failed. Reason:', reason
 
-files_path = '/home/student/Documents/CSA/local/'
-server_ip = '172.27.108.88'
+files_path = '/home/justin/wiki'
+server_ip = '172.25.108.150'
 #172.27.108.88
 
 def watchDog(base_path, q, ignore):

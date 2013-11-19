@@ -9,6 +9,9 @@ from PIL import Image, ImageTk
 import tkFont
 import os
 import subprocess
+import threading
+import Queue
+
 
 class ReadOnlyText(Text):
     def __init__(self, *args, **kwargs):
@@ -33,7 +36,7 @@ class View(Frame):
         output = Label(self.parent, text="Output")
         output.grid(row=0, column=3)
 
-        scrollbar = Scrollbar(self.parent, )
+        scrollbar = Scrollbar(self.parent)
         scrollbar.grid(row=1, column=4, rowspan=100, sticky=N+S)
 
         self.log = ReadOnlyText(self.parent, bg="white", undo=False, yscrollcommand=scrollbar.set, width=120)
@@ -195,12 +198,61 @@ class View(Frame):
         win.deiconify()
 
 
+class DaemonView(Frame):
+
+
+    def __init__(self, parent, govnah):
+        self.parent = parent
+        self.govnah = govnah
+        self.initUI()
+        #self.out = self.govnah.daemon.stdout
+        #self.err = self.govnah.daemon.stderr
+
+    def initUI(self):
+
+        scrollbar = Scrollbar(self.parent)
+        scrollbar.grid(row=0, column=1, sticky=N+S)
+
+        self.log = ReadOnlyText(self.parent, bg="white", undo=False, yscrollcommand=scrollbar.set, width=80)
+        self.log.tag_config("errorstring", foreground="#CC0000")
+        self.log.grid(row=0, column=0)
+
+        button = Button(self.parent, text="Stop this Daemon", command=self.stop)
+        button.grid(row=1, columnspan=2)
+
+        scrollbar.config(command=self.log.yview)
+
+    def stop(self):
+        self.govnah.stopServer()
+
+    def update(self):
+        try:
+            msg = self.govnah.dioq.get_nowait()
+            if msg:
+                self.log.insert(END, msg + "\n")
+        except Queue.Empty:
+            pass
+
+        try:
+            msg = self.govnah.dioeq.get_nowait()
+            if msg:
+                self.log.insert(END, msg + "\n", ('errorstring',))
+        except Queue.Empty:
+            pass
+
+        self.parent.after(50, self.update)
+
+
 class SInterface():
 
     def __init__(self):
         self.prefs = DbOps.ServerPrefs()
         self.path = self.prefs.getOption("path")
         self.db = DbOps.DbOps(self.path)
+        self.daemon = None
+        self.dview = None
+        self.dioq = Queue.Queue()
+        self.dioeq = Queue.Queue()
         root = Tk()
         root.geometry("1150x400+100+100")
         img = ImageTk.PhotoImage(file='img/logo50.png')
@@ -258,16 +310,28 @@ class SInterface():
         self.db = DbOps.DbOps(self.path)
 
     def startServer(self):
-        #print os.getcwd()
+        if self.daemon is None:
+            self.droot = Toplevel()
+            self.droot.geometry("585x380+100+100")
+            self.droot.title("OneDir at " + self.path)
+            self.droot.protocol('WM_DELETE_WINDOW', self.stopServer)
+            self.view.appendText("Start Daemon on path: " + self.path)
+            self.daemon = subprocess.Popen(["python", "Server/Daemon/server_daemon.py", "--path", self.path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            self.dview = DaemonView(self.droot, self)
+            self.diot = Piper(self)
+            self.diot.start()
+            self.dview.update()
+        else:
+            self.view.appendText("Daemon Already started on " + self.path + ". Please stop it first.")
 
-        #subprocess.call(["python", "Server/Daemon/server_daemon.py", "--path", self.path, "&"], shell=False)
-        self.view.appendText("Start Daemon: " + "")
-        self.daemon = subprocess.Popen(["python", "Server/Daemon/server_daemon.py", "--path", self.path])
-        #self.view.appendText(self.daemon.stdout.read())
-        #self.dview = Toplevel()
-        #self.dview.title = "OneDir Server Daemon at " + self.path
-        #self.sdlog = ReadOnlyText(self.dview, bg="white", undo=False, width=120)
-        #self.sdlog.pack(self.dview)
+    def stopServer(self):
+        if self.daemon is not None:
+            self.diot.stopThread()
+            self.daemon.terminate()
+            self.daemon = None
+            self.droot.destroy()
+        else:
+            self.view.appendText("No Daemon Currently Running")
 
     def start(self):
         while True:
@@ -300,3 +364,37 @@ class SInterface():
                     self.db.updatePassword(str, pw)
                 else:
                     print "That user does not exist.\n\n"
+
+
+class Piper (threading.Thread):
+    def __init__(self, govnah):
+        threading.Thread.__init__(self)
+        self.govnah = govnah
+        self.stop = False
+
+    def stopThread(self):
+        self.stop = True
+
+    def run(self):
+        while not self.stop:
+            while True:
+                try:
+                    line = self.govnah.daemon.stdout.readline()
+                except AttributeError:
+                    pass
+
+                if not line:
+                    break
+                else:
+                    self.govnah.dioq.put(line, True)
+
+            while True:
+                try:
+                    line = self.govnah.daemon.stderr.readline()
+                except AttributeError:
+                    pass
+
+                if not line:
+                    break
+                else:
+                    self.govnah.dioeq.put(line, True)
