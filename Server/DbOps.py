@@ -25,7 +25,7 @@ class DbOps:
     def setup(self):
         # A method to make sure that all our tables in the database are initialized and ready to go
         self.cur.execute("CREATE TABLE IF NOT EXISTS user(id INTEGER PRIMARY KEY ASC, username TEXT, password TEXT, ts TEXT, UNIQUE(username) ON CONFLICT IGNORE)")
-        self.cur.execute("CREATE TABLE IF NOT EXISTS transactions(id INTEGER PRIMARY KEY ASC, username TEXT, type TEXT, path TEXT, ts TEXT)")
+        self.cur.execute("CREATE TABLE IF NOT EXISTS transactions(id INTEGER PRIMARY KEY ASC, username TEXT, type TEXT, path TEXT, size INTEGER, ts TEXT)")
 
         # before exiting method
         self.db.commit()
@@ -78,15 +78,33 @@ class DbOps:
         self.cur.execute("SELECT * FROM user ORDER BY username ASC")
         return self.cur.fetchall()
 
-    def recordTrans(self, userName, type, path):
-        self.cur.execute("INSERT INTO transactions VALUES(?,?,?,?,?)",[None, userName, self.hash256.hexdigest(), path, datetime.now()])
+    def getTransByUser(self):
+        self.cur.execute("SELECT * FROM transactions ORDER BY username ASC")
+        return self.cur.fetchall()
+
+    def getTransBySize(self):
+        self.cur.execute("SELECT * FROM transactions ORDER BY size ASC, username ASC")
+        return self.cur.fetchall()
+
+    def getTransByTime(self):
+        self.cur.execute("SELECT * FROM transactions ORDER BY DATETIME(ts) DESC")
+        return self.cur.fetchall()
+
+    def getTransByType(self):
+        self.cur.execute("SELECT * FROM transactions ORDER BY type ASC, username ASC")
+        return self.cur.fetchall()
+
+    def recordTrans(self, userName, type, size, path):
+        self.cur.execute("INSERT INTO transactions VALUES(?,?,?,?,?,?)",[None, userName, type, path, size, datetime.now()])
 
     def finish(self):
         self.db.close()
 
     def start(self):
         self.createUser("zebra", "hello")
-        self.createUser("Justin", "hello")
+        self.createUser("justin", "hello")
+        self.recordTrans("justin", "put", 1024, "/home/justin")
+        self.recordTrans("zebra", "put", 856, "/home/zebra")
 
 
 class ServerPrefs:

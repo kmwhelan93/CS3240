@@ -183,3 +183,6 @@ def auth(username, password):
 
 def register(username, password):
     return db.createUser(username, password)
+
+### RECORD SERVER TRANSACTIONS WITH THE FOLLOWING ###
+#db.recordTrans(userName,type,size,path)
