@@ -163,11 +163,11 @@ class EchoClientFactory(ClientFactory):
     def clientConnectionFailed(self, connector, reason):
         print 'Connection failed. Reason:', reason
 
+
 files_path = '/home/student/Documents/CSA/local/'
 server_ip = 'localhost'
 #KEVIN: 172.25.108.150
 #VENKAT: 172.27.108.88
-
 
 def watchDog(base_path, q, ignore):
     logging.basicConfig(level=logging.INFO,

@@ -9,6 +9,9 @@ from PIL import Image, ImageTk
 import tkFont
 import os
 import subprocess
+import threading
+import Queue
+
 
 class ReadOnlyText(Text):
     def __init__(self, *args, **kwargs):
@@ -33,7 +36,7 @@ class View(Frame):
         output = Label(self.parent, text="Output")
         output.grid(row=0, column=3)
 
-        scrollbar = Scrollbar(self.parent, )
+        scrollbar = Scrollbar(self.parent)
         scrollbar.grid(row=1, column=4, rowspan=100, sticky=N+S)
 
         self.log = ReadOnlyText(self.parent, bg="white", undo=False, yscrollcommand=scrollbar.set, width=120)
@@ -47,58 +50,64 @@ class View(Frame):
         printUserName = Button(self.parent, text="By Name", command=self.govnah.printUsersByName)
         printUserName.grid(row=1, column=1)
 
-        printUserTime = Button(self.parent, text="By Time", command=self.govnah.printUsersByName)
+        printUserTime = Button(self.parent, text="By Time", command=self.govnah.printUsersByTime)
         printUserTime.grid(row=1, column=2)
 
         trans = Label(self.parent, text="List Transactions: ")
         trans.grid(row=2, column=0)
 
-        printTransType = Button(self.parent, text="By Type")
+        printTransType = Button(self.parent, text="By Type", command=self.govnah.printTransByType)
         printTransType.grid(row=2, column=1)
 
-        printTransTime = Button(self.parent, text="By Time")
+        printTransTime = Button(self.parent, text="By Time", command=self.govnah.printTransByTime)
         printTransTime.grid(row=2, column=2)
 
+        printTransSize = Button(self.parent, text="By Size", command=self.govnah.printTransBySize)
+        printTransSize.grid(row=3, column=1)
+
+        printTransUser = Button(self.parent, text="By User", command=self.govnah.printTransByUser)
+        printTransUser.grid(row=3, column=2)
+
         trans = Label(self.parent, text="Username: ")
-        trans.grid(row=3, column=0)
+        trans.grid(row=4, column=0)
 
         vcmd = (self.parent.register(self.valid), '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
 
         uentry = Entry(self.parent, width=20, bg="white", validate="key", validatecommand=vcmd)
-        uentry.grid(row=3, column=1, columnspan=2)
+        uentry.grid(row=4, column=1, columnspan=2)
 
         trans = Label(self.parent, text="Actions: ")
-        trans.grid(row=5, column=0)
+        trans.grid(row=6, column=0)
 
         changepw = Button(self.parent, text="Change\nPassword", command=self.getNewPw)
-        changepw.grid(row=5, column=1)
+        changepw.grid(row=6, column=1)
 
         delete = Button(self.parent, text="Delete", command=self.delUser)
-        delete.grid(row=5, column=2)
+        delete.grid(row=6, column=2)
 
         start = Button(self.parent, text="Start Server Daemon", command=self.govnah.startServer)
-        start.grid(row=8, column=0, columnspan=3)
+        start.grid(row=9, column=0, columnspan=3)
 
         self.uinfo = Label(self.parent, text="")
-        self.uinfo.grid(row=4, column=1, columnspan=2)
+        self.uinfo.grid(row=5, column=1, columnspan=2)
 
         pathLabel = Label(self.parent, text="OneDir Path:")
-        pathLabel.grid(row=6, column=0)
+        pathLabel.grid(row=7, column=0)
 
         self.path = self.govnah.path
         self.pathEntry = Entry(self.parent, width=20, bg="white")
         self.pathEntry.insert(END, self.path)
-        self.pathEntry.grid(row = 6, column=1, columnspan=2)
+        self.pathEntry.grid(row = 7, column=1, columnspan=2)
 
         performChange = Button(self.parent, text="Change OneDir\nDirectory", command=self.chngPath)
-        performChange.grid(row=7, column=1, columnspan=2)
+        performChange.grid(row=8, column=1, columnspan=2)
 
         self.img = ImageTk.PhotoImage(file='img/logo50.png')
         logoLabel = Label(self.parent, image=self.img)
-        logoLabel.grid(row=9, column=0)
+        logoLabel.grid(row=10, column=0)
 
         slogan = Label(self.parent, text="This Directory\nis a OneDir!", font=("Helvetica", 10, "bold italic"))
-        slogan.grid(row = 9, column=1, columnspan=2)
+        slogan.grid(row = 10, column=1, columnspan=2)
 
         self.log.insert(END, "Howdy Admin, Welcome to the Server Interface \n\n")
 
@@ -195,18 +204,72 @@ class View(Frame):
         win.deiconify()
 
 
+class DaemonView(Frame):
+
+
+    def __init__(self, parent, govnah):
+        self.parent = parent
+        self.govnah = govnah
+        self.initUI()
+        #self.out = self.govnah.daemon.stdout
+        #self.err = self.govnah.daemon.stderr
+
+    def initUI(self):
+
+        scrollbar = Scrollbar(self.parent)
+        scrollbar.grid(row=0, column=1, sticky=N+S)
+
+        self.log = ReadOnlyText(self.parent, bg="white", undo=False, yscrollcommand=scrollbar.set, width=80)
+        self.log.tag_config("errorstring", foreground="#CC0000")
+        self.log.grid(row=0, column=0)
+
+        button = Button(self.parent, text="Stop this Daemon", command=self.stop)
+        button.grid(row=1, columnspan=2)
+
+        scrollbar.config(command=self.log.yview)
+
+    def stop(self):
+        self.govnah.stopServer()
+
+    def update(self):
+        try:
+            msg = self.govnah.dioq.get_nowait()
+            if msg:
+                self.log.insert(END, msg + "\n")
+        except Queue.Empty:
+            pass
+
+        try:
+            msg = self.govnah.dioeq.get_nowait()
+            if msg:
+                self.log.insert(END, msg + "\n", ('errorstring',))
+        except Queue.Empty:
+            pass
+
+        self.parent.after(50, self.update)
+
+
 class SInterface():
 
     def __init__(self):
         self.prefs = DbOps.ServerPrefs()
         self.path = self.prefs.getOption("path")
         self.db = DbOps.DbOps(self.path)
-        root = Tk()
-        root.geometry("1150x400+100+100")
+        self.daemon = None
+        self.dview = None
+        self.dioq = Queue.Queue()
+        self.dioeq = Queue.Queue()
+        self.root = Tk()
+        self.root.geometry("1150x400+100+100")
         img = ImageTk.PhotoImage(file='img/logo50.png')
-        root.tk.call('wm', 'iconphoto', root._w, img)
-        self.view = View(root, self)
-        root.mainloop()
+        self.root.tk.call('wm', 'iconphoto', self.root._w, img)
+        self.view = View(self.root, self)
+        self.root.protocol('WM_DELETE_WINDOW', self.close)
+        self.root.mainloop()
+
+    def close(self):
+        self.stopServer()
+        self.root.destroy()
 
     def menu(self):
         print "Howdy Admin! Please select an option:"
@@ -228,11 +291,35 @@ class SInterface():
         self.view.appendText("The list of users, sorted by registration time. (Unique ID, username, password hash, registration timestamp)")
         self.printSanitizeDBstr(self.db.getUsersByTime())
 
+    def printTransByUser(self):
+        self.view.appendText("The list of transactions, sorted by username. (Unique ID, username, type, path, size, timestamp)")
+        self.printSanitizeDBstrDub(self.db.getTransByUser())
+
+    def printTransBySize(self):
+        self.view.appendText("The list of transactions, sorted by size. (Unique ID, username, type, path, size, timestamp)")
+        self.printSanitizeDBstrDub(self.db.getTransBySize())
+
+    def printTransByTime(self):
+        self.view.appendText("The list of transactions, sorted by timestamp. (Unique ID, username, type, path, size, timestamp)")
+        self.printSanitizeDBstrDub(self.db.getTransByTime())
+
+    def printTransByType(self):
+        self.view.appendText("The list of transactions, sorted by type. (Unique ID, username, type, path, size, timestamp)")
+        self.printSanitizeDBstrDub(self.db.getTransByType())
+
     def printSanitizeDBstr(self, results):
         for entry in results:
             t = ""
             for item in entry:
                 t = t + str(item) + "\t"
+            self.view.appendText(t)
+        self.view.appendText("")
+
+    def printSanitizeDBstrDub(self, results):
+        for entry in results:
+            t = ""
+            for item in entry:
+                t = t + str(item) + "\t\t"
             self.view.appendText(t)
         self.view.appendText("")
 
@@ -258,16 +345,29 @@ class SInterface():
         self.db = DbOps.DbOps(self.path)
 
     def startServer(self):
-        #print os.getcwd()
+        if self.daemon is None:
+            self.droot = Toplevel()
+            self.droot.geometry("585x380+100+100")
+            self.droot.title("OneDir at " + self.path)
+            self.droot.protocol('WM_DELETE_WINDOW', self.stopServer)
+            self.view.appendText("Start Daemon on path: " + self.path)
+            self.daemon = subprocess.Popen(["python", "Server/Daemon/server_daemon.py", "--path", self.path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            self.dview = DaemonView(self.droot, self)
+            self.diot = Piper(self)
+            self.diot.start()
+            self.dview.update()
+        else:
+            self.view.appendText("Daemon Already started on " + self.path + ". Please stop it first.")
 
-        #subprocess.call(["python", "Server/Daemon/server_daemon.py", "--path", self.path, "&"], shell=False)
-        self.view.appendText("Start Daemon: " + "")
-        self.daemon = subprocess.Popen(["python", "Server/Daemon/server_daemon.py", "--path", self.path])
-        #self.view.appendText(self.daemon.stdout.read())
-        #self.dview = Toplevel()
-        #self.dview.title = "OneDir Server Daemon at " + self.path
-        #self.sdlog = ReadOnlyText(self.dview, bg="white", undo=False, width=120)
-        #self.sdlog.pack(self.dview)
+    def stopServer(self):
+        if self.daemon is not None:
+            self.diot.stopThread()
+            self.daemon.terminate()
+            self.daemon.kill()
+            self.daemon = None
+            self.droot.destroy()
+        else:
+            self.view.appendText("No Daemon Currently Running")
 
     def start(self):
         while True:
@@ -300,3 +400,37 @@ class SInterface():
                     self.db.updatePassword(str, pw)
                 else:
                     print "That user does not exist.\n\n"
+
+
+class Piper (threading.Thread):
+    def __init__(self, govnah):
+        threading.Thread.__init__(self)
+        self.govnah = govnah
+        self.stop = False
+
+    def stopThread(self):
+        self.stop = True
+
+    def run(self):
+        while not self.stop:
+            while True:
+                try:
+                    line = self.govnah.daemon.stdout.readline()
+                except AttributeError:
+                    break
+
+                if not line:
+                    break
+                else:
+                    self.govnah.dioq.put(line, True)
+
+            while True:
+                try:
+                    line = self.govnah.daemon.stderr.readline()
+                except AttributeError:
+                    break
+
+                if not line:
+                    break
+                else:
+                    self.govnah.dioeq.put(line, True)
