@@ -107,6 +107,7 @@ class DbOps:
         self.createUser('kevin', 'kevin')
         self.recordTrans("justin", "put", 1024, "/home/justin")
         self.recordTrans("zebra", "put", 856, "/home/zebra")
+        self.db.commit()
 
 
 class ServerPrefs:
