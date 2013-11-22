@@ -6,13 +6,11 @@ from Server import DbOps
 from idlelib.WidgetRedirector import WidgetRedirector
 import tkMessageBox
 from PIL import Image, ImageTk
-import tkFont
-import os
 import subprocess
 import threading
 import Queue
 
-
+# A small class that wraps the TextView widgets so they are read only
 class ReadOnlyText(Text):
     def __init__(self, *args, **kwargs):
         Text.__init__(self, *args, **kwargs)
@@ -20,6 +18,7 @@ class ReadOnlyText(Text):
         self.insert = self.redirector.register("insert", lambda *args, **kw: "break")
         self.delete = self.redirector.register("delete", lambda *args, **kw: "break")
 
+# This module implements a MVC model. This class is the View and contains the UI Stuff
 class View(Frame):
     def __init__(self, parent, govnah):
         self.govnah = govnah
@@ -203,7 +202,7 @@ class View(Frame):
         # after setting correct window position
         win.deiconify()
 
-
+# This module implements a MVC model. This class is the View and contains the UI Stuff
 class DaemonView(Frame):
 
 
@@ -211,8 +210,6 @@ class DaemonView(Frame):
         self.parent = parent
         self.govnah = govnah
         self.initUI()
-        #self.out = self.govnah.daemon.stdout
-        #self.err = self.govnah.daemon.stderr
 
     def initUI(self):
 
@@ -231,6 +228,8 @@ class DaemonView(Frame):
     def stop(self):
         self.govnah.stopServer()
 
+    # This is designed to be recursively called (every 50ms) to continually update the DaemonView Window when new
+    # output is available form the queue.
     def update(self):
         try:
             msg = self.govnah.dioq.get_nowait()
@@ -248,12 +247,13 @@ class DaemonView(Frame):
 
         self.parent.after(50, self.update)
 
-
+# The main class for this module. This class is the controller and defines the behaviours.
 class SInterface():
 
     def __init__(self):
         self.prefs = DbOps.ServerPrefs()
         self.path = self.prefs.getOption("path")
+        # This is the model. The db class is a wrapper around database operations.
         self.db = DbOps.DbOps(self.path)
         self.daemon = None
         self.dview = None
@@ -401,7 +401,8 @@ class SInterface():
                 else:
                     print "That user does not exist.\n\n"
 
-
+# A class that will be run in a separate thread that takes output from the server daemon and puts it into a queue that
+# will be read from by the DaemonView
 class Piper (threading.Thread):
     def __init__(self, govnah):
         threading.Thread.__init__(self)
