@@ -97,6 +97,7 @@ class DbOps:
 
     def recordTrans(self, userName, type, size, path):
         self.cur.execute("INSERT INTO transactions VALUES(?,?,?,?,?,?)",[None, userName, type, path, size, datetime.now()])
+        self.db.commit()
 
     def finish(self):
         self.db.close()
