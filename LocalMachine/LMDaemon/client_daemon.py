@@ -59,7 +59,7 @@ class Echo(LineReceiver):
     def callback(self):
         #print 'callback'
         if (self.connected == True and self.command_out == False and self.q.qsize() > 0):
-            print 'sending command'
+            #print 'sending command'
             self._sendCommand(self.q.get())
 
     def dataReceived(self, data):
@@ -68,7 +68,9 @@ class Echo(LineReceiver):
             self.connected = True
         else:
             files = json.loads(data.strip())
-            if "directories" in files.keys():
+            if files['success'] == False:
+                print 'Authentication failed with username and password get them here'
+            elif "directories" in files.keys():
             # get directories first
                 files['directories'].sort()
                 directories = []
@@ -161,9 +163,11 @@ class EchoClientFactory(ClientFactory):
     def clientConnectionFailed(self, connector, reason):
         print 'Connection failed. Reason:', reason
 
-files_path = '/home/justin/wiki'
-server_ip = '172.25.108.150'
-#172.27.108.88
+
+files_path = '/home/student/Documents/CSA/local/'
+server_ip = 'localhost'
+#KEVIN: 172.25.108.150
+#VENKAT: 172.27.108.88
 
 def watchDog(base_path, q, ignore):
     logging.basicConfig(level=logging.INFO,

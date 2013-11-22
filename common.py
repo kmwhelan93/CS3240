@@ -78,6 +78,8 @@ def get_timestamps_helper(timestamps, base_path):
             modTime = os.path.getmtime(path)
             timestamps[path] = modTime
         elif(os.path.isdir(path)):
+            modTime = os.path.getmtime(path)
+            timestamps[path] = modTime
             get_timestamps_helper(timestamps, path)
     return timestamps
 

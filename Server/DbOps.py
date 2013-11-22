@@ -5,22 +5,23 @@ from datetime import datetime
 import os
 
 class DbOps:
-
+    # KMW EDITS: changed things to os.path.join to handle trailing "/" robustly
     def __init__(self, path):
         # Connect to the database. Name should be preceeded with a . so its a hidden file
         if not path:
-            self.path = str(os.getenv("HOME")) + "/OneDir"
+            self.path = os.path.join(str(os.getenv("HOME")), "OneDir")
         else:
             self.path = path
-
-        print self.path + '/.oneDir.db'
-        self.db = sqlite3.connect(self.path + '/.oneDir.db')
+        db_path = os.path.join(self.path, '.oneDir.db')
+        print db_path
+        self.db = sqlite3.connect(db_path)
         # Get a cursor object for operations
         self.cur = self.db.cursor()
         # Get a SHA3 256 bit hasher for storing passwords
         self.hash256 = hashlib.sha256()
         self.setup()
         self.start()
+
 
     def setup(self):
         # A method to make sure that all our tables in the database are initialized and ready to go
@@ -64,8 +65,8 @@ class DbOps:
         self.cur.execute('SELECT * FROM user WHERE username=?',[userName])
         userData = self.cur.fetchone()
         self.hash256.update(password)
-        if len(userData) > 0:
-            if userData(2) is self.hash256.hexdigest():
+        if userData != None and len(userData) > 0:
+            if userData[2] == self.hash256.hexdigest():
                 return True
 
         return False
@@ -103,6 +104,7 @@ class DbOps:
     def start(self):
         self.createUser("zebra", "hello")
         self.createUser("justin", "hello")
+        self.createUser('kevin', 'kevin')
         self.recordTrans("justin", "put", 1024, "/home/justin")
         self.recordTrans("zebra", "put", 856, "/home/zebra")
 

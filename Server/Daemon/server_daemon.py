@@ -53,8 +53,14 @@ class FileTransferProtocol(basic.LineReceiver):
     def lineReceived(self, line):
         data = json.loads(line)
         command = data["command"]
-        retVal = {"done": True}
+        retVal = {"done": True, 'success': True}
         print line
+        # authenticate
+        if not self.factory.auth(data['username'], data['password']):
+            retVal['success'] = False
+            self.sendLine(json.dumps(retVal))
+            return
+
         if not command in COMMANDS:
             self.sendLine(json.dumps(retVal))
             return
@@ -102,7 +108,7 @@ class FileTransferProtocol(basic.LineReceiver):
             self.sendLine(json.dumps(retVal))
         elif command == 'put':
             try:
-                filename = data["local"]
+                filename = self.clean_file_string(data["local"])
             except IndexError:
                 self.transport.write('Missing filename or file MD5 hash\n')
                 self.transport.write('ENDMSG\n')
@@ -110,6 +116,7 @@ class FileTransferProtocol(basic.LineReceiver):
 
             file_path = os.path.join(self.factory.files_path, data['username'], filename)
             # Switch to the raw mode (for receiving binary data)
+
             print 'Receiving file: %s' % (filename)
             f = open(file_path, 'w')
             f.write(data['content'])
@@ -122,6 +129,11 @@ class FileTransferProtocol(basic.LineReceiver):
             self.transport.loseConnection()
         else:
             self.sendLine(json.dumps(retVal))
+    def clean_file_string(self, string):
+        if (len(string) > 0):
+            if string[0] == '/':
+                return string[1:]
+        return string
 
     def _get_file_list(self):
         """ Returns a list of the files in the specified directory as a dictionary:
@@ -153,11 +165,18 @@ class FileTransferProtocol(basic.LineReceiver):
 class FileTransferServerFactory(protocol.ServerFactory):
     protocol = FileTransferProtocol
 
-    def __init__(self, files_path):
+    def __init__(self, files_path, db):
         self.files_path = files_path
+        self.db = db
 
         self.clients = []
         self.files = None
+
+    def auth(self, username, password):
+        return self.db.authUser(username, password)
+
+    def register(self, username, password):
+        return self.db.createUser(username, password)
 
 
 if __name__ == '__main__':
@@ -172,17 +191,6 @@ if __name__ == '__main__':
         options.path = "/home/student/Documents/CSA/server/" #os.path.join("C:\Users\Venkat\Documents", "test folder")
 
     display_message('Listening on port %d, serving files from directory: %s' % (options.port, options.path))
-
-    reactor.listenTCP(options.port, FileTransferServerFactory(options.path))
+    db = Server.DbOps.DbOps(options.path)
+    reactor.listenTCP(options.port, FileTransferServerFactory(options.path, db))
     reactor.run()
-
-### SERVER DATABASE OPERATIONS... INSERTED BY JUSTIN ###
-db = Server.DbOps.DbOps(options.path)
-def auth(username, password):
-    return db.authUser(username, password)
-
-def register(username, password):
-    return db.createUser(username, password)
-
-### RECORD SERVER TRANSACTIONS WITH THE FOLLOWING ###
-#db.recordTrans(userName,type,size,path)
