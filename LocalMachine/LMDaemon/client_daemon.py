@@ -51,7 +51,7 @@ class Echo(LineReceiver):
 
     def get_files(self):
         username = "kevin"
-        password = "kevi"
+        password = "kevin"
         timestamps = get_timestamps(self.files_path)
         object = {"command": "get", "username": username, "password": password, "timestamps": timestamps}
         self.q.put(object)
