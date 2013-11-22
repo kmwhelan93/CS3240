@@ -206,9 +206,10 @@ class View(Frame):
 class DaemonView(Frame):
 
 
-    def __init__(self, parent, govnah):
+    def __init__(self, parent, govnah, path):
         self.parent = parent
         self.govnah = govnah
+        self.path = path
         self.initUI()
 
     def initUI(self):
@@ -343,6 +344,11 @@ class SInterface():
         self.prefs.setOption("path", path)
         self.path = path
         self.db = DbOps.DbOps(self.path)
+        if self.daemon is not None:
+            self.view.appendText("OneDir Directory has changed to: " + self.path + " but there is still a daemon running on"
+                                 + self.dview.path)
+        else:
+            self.view.appendText("One Directory has changed to: " + self.path)
 
     def startServer(self):
         if self.daemon is None:
@@ -351,13 +357,14 @@ class SInterface():
             self.droot.title("OneDir at " + self.path)
             self.droot.protocol('WM_DELETE_WINDOW', self.stopServer)
             self.view.appendText("Start Daemon on path: " + self.path)
-            self.daemon = subprocess.Popen(["python", "Server/Daemon/server_daemon.py", "--path", self.path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-            self.dview = DaemonView(self.droot, self)
+            self.daemon = subprocess.Popen(["python", "Server/Daemon/server_daemon.py", "--path", self.path],
+                                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            self.dview = DaemonView(self.droot, self, self.path)
             self.diot = Piper(self)
             self.diot.start()
             self.dview.update()
         else:
-            self.view.appendText("Daemon Already started on " + self.path + ". Please stop it first.")
+            self.view.appendText("Daemon Already started on " + self.dview.path + ". Please stop it first.")
 
     def stopServer(self):
         if self.daemon is not None:

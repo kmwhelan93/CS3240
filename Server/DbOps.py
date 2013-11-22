@@ -13,7 +13,7 @@ class DbOps:
         else:
             self.path = path
         db_path = os.path.join(self.path, '.oneDir.db')
-        print db_path
+        # print db_path
         self.db = sqlite3.connect(db_path)
         # Get a cursor object for operations
         self.cur = self.db.cursor()

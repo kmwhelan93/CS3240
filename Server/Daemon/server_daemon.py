@@ -66,12 +66,14 @@ class FileTransferProtocol(basic.LineReceiver):
             return
         if command == 'move':
             print "Receiving move from " + data['src'] + " to " + data['dest']
+            self.factory.db.recordTrans(data['username'], "move", 0, data['src'] + " to " + data['dest'])
             if os.path.exists(os.path.join(self.factory.files_path, data["username"], data['src'])):
                 os.renames(os.path.join(self.factory.files_path, data["username"], data['src']), os.path.join(self.factory.files_path, data['username'], data['dest']))
             self.sendLine(json.dumps(retVal))
 
         elif command == "delete":
             print "Receiving delete of " + data["what"] + " " + data['file']
+            self.factory.db.recordTrans(data['username'], "delete", 0, data["what"] + " " + data['file'])
             path = os.path.join(self.factory.files_path, data['username'], data["file"])
             if (os.path.exists(path)):
                 if (data["what"] == "file"):
@@ -81,6 +83,7 @@ class FileTransferProtocol(basic.LineReceiver):
             self.sendLine(json.dumps(retVal))
         elif command == 'create':
             print "Receiving create for " + data['file']
+            self.factory.db.recordTrans(data['username'], "create", 0, data["file"])
             if data['what'] == 'directory':
                 path = os.path.join(self.factory.files_path, data["username"], data['file'])
                 if not os.path.exists(path):
@@ -90,6 +93,7 @@ class FileTransferProtocol(basic.LineReceiver):
             self.sendLine(json.dumps(retVal))
         elif command == 'get':
             #TODO GET DOESNT WORK FOR DIRECTORIES
+            self.factory.db.recordTrans(data['username'], "get", 0, "/")
             timestamps = get_timestamps(os.path.join(self.factory.files_path, data['username']))
             retVal = dict(retVal.items() + {'files': {}, 'directories': [], "remove": []}.items())
             for file, stamp in timestamps.iteritems():
@@ -116,7 +120,7 @@ class FileTransferProtocol(basic.LineReceiver):
 
             file_path = os.path.join(self.factory.files_path, data['username'], filename)
             # Switch to the raw mode (for receiving binary data)
-
+            self.factory.db.recordTrans(data['username'], "put", 0, file_path)
             print 'Receiving file: %s' % (filename)
             f = open(file_path, 'w')
             f.write(data['content'])
