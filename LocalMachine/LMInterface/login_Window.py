@@ -77,6 +77,7 @@ class loginWindow:
             return
 
         elif self.UI.prefOps.authenticateUser(username, password):
+            self.UI.passwordLength = len(password)
             self.UI.initUI(username)
             self.closeWindow()
             return
@@ -89,6 +90,7 @@ class loginWindow:
             self.UI.prefOps.createUser(username, password, directory)
             self.UI.setUpText.set("You have successfully set up you OneDir directory on this machine.")
             self.setUpStatus.config(fg="green")
+            self.UI.passwordLength = len(password)
             self.UI.initUI(username)
             self.closeWindow()
             return

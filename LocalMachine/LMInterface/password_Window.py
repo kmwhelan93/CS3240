@@ -61,7 +61,8 @@ class passwordWindow:
 
         elif (len(np1)+len(np2) >= 8) & (np1 == np2):
             self.UI.prefOps.updatePassword(self.UI.userRow[0], np1)
-            self.UI.passwordVar.set(self.UI.userRow[1])
+            self.UI.passwordLength = len(np1)
+            self.UI.passwordVar.set(self.UI.blankPassword(self.UI.passwordLength))
             self.closePasswordWindow()
             return
 

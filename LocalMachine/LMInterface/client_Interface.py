@@ -15,12 +15,15 @@ class clientInterface:
         self.root.withdraw()
         self.loginWindow = loginWindow(self)
         self.root.mainloop()
+        self.userRow = None
+        self.passwordLength = 0
 
     def initUI(self, username):
 
         self.root.title("OneDir Local User Preferences Interface")
         self.root.config(padx=10, pady=10)
         self.userRow = self.prefOps.getUserRow(username)
+
 
         self.usernameVar = StringVar()
         self.passwordVar = StringVar()
@@ -37,7 +40,7 @@ class clientInterface:
         self.autosyncLabel.grid(row=3)
 
         self.usernameVar.set(self.userRow[0])
-        self.passwordVar.set(self.userRow[1])
+        self.passwordVar.set(self.blankPassword(self.passwordLength))
         self.directoryVar.set(self.userRow[3])
         self.autosyncVar.set(self.userRow[2])
 
@@ -65,6 +68,13 @@ class clientInterface:
         self.exitButton.grid(row=4, column=2)
 
         self.center(self.root)
+
+    def blankPassword(self, length):
+        blank = ""
+        for i in range(length):
+            blank+="*"
+
+        return blank
 
 
     def center(self, win):
