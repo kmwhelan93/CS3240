@@ -32,6 +32,8 @@ class preferenceOperations:
         else:
             self.con.commit()
 
+
+
     def createUser(self, username, password, directory):
         if not self.userExistsLocally(username):
             digest = hashlib.sha256(password).hexdigest()
@@ -77,6 +79,25 @@ class preferenceOperations:
         self.cur.execute("SELECT * FROM Preferences WHERE Username =:Username", {"Username": username})
         row = self.cur.fetchone()
         return row
+
+    def getHashedPassword(self, username):
+
+        self.cur.execute("SELECT * FROM Preferences WHERE Username =:Username", {"Username": username})
+        row = self.cur.fetchone()
+        return row[1]
+
+    def getAutoSyncSetting(self, username):
+
+        self.cur.execute("SELECT * FROM Preferences WHERE Username =:Username", {"Username": username})
+        row = self.cur.fetchone()
+        return row[2]
+
+    def getDirectoryPath(self, username):
+
+        self.cur.execute("SELECT * FROM Preferences WHERE Username =:Username", {"Username": username})
+        row = self.cur.fetchone()
+        return row[3]
+
 
     def updatePassword(self, username, password):
 
