@@ -177,6 +177,8 @@ class FileTransferServerFactory(protocol.ServerFactory):
         self.files = None
 
     def auth(self, username, password):
+        print username, password
+        print self.db.authUser('kevin', 'kevin')
         return self.db.authUser(username, password)
 
     def register(self, username, password):
