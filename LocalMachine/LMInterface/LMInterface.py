@@ -42,9 +42,9 @@ class Gui(Frame):
         passwordL = Label(self.top, text="Password:", padx=5, pady = 5)
         passwordL.grid(row=2, columnspan=1)
 
-        self.usernameE= Entry(self.top , width = 40)
+        self.usernameE= Entry(self.top , width = 40, bg="white")
         self.usernameE.grid(row=1,column=1,columnspan=2)
-        self.passwordE = Entry(self.top, width = 40, show="*")
+        self.passwordE = Entry(self.top, width = 40, show="*", bg="white")
         self.passwordE.grid(row=2,column=1,columnspan=2)
 
         LoginBtn = Button(self.top, text="Login", width = 40,
@@ -63,7 +63,7 @@ class Gui(Frame):
         directoryL = Label(self.top, text="Directory:", padx=5, pady = 5)
         directoryL.grid(row=5, column = 0, columnspan=1)
 
-        self.directoryE= Entry(self.top , width = 40)
+        self.directoryE= Entry(self.top , width = 40, bg="white")
         self.directoryE.grid(row=5,column=1,columnspan=2)
 
         SignUpBtn = Button(self.top, text="Sign Up" , width = 40,
