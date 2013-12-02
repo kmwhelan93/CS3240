@@ -41,8 +41,7 @@ class DbOps:
 
     def createUser(self, userName, password):
         if not self.userExists(userName):
-            self.hash256.update(password)
-            self.cur.execute("INSERT INTO user VALUES(?,?,?,?)",[None, userName, self.hash256.hexdigest(), datetime.now()])
+            self.cur.execute("INSERT INTO user VALUES(?,?,?,?)",[None, userName, hashlib.sha224(password).hexdigest(), datetime.now()])
             self.db.commit()
             return True
         else:
@@ -54,8 +53,7 @@ class DbOps:
 
     def updatePassword(self, userName, password):
         if self.userExists(userName):
-            self.hash256.update(password)
-            self.cur.execute("UPDATE user SET password=? WHERE username=?", [self.hash256.hexdigest(),userName])
+            self.cur.execute("UPDATE user SET password=? WHERE username=?", [ hashlib.sha224(password).hexdigest(),userName])
             self.db.commit()
             return True
         else:
@@ -64,9 +62,8 @@ class DbOps:
     def authUser(self, userName, password):
         self.cur.execute('SELECT * FROM user WHERE username=?',[userName])
         userData = self.cur.fetchone()
-        self.hash256.update(password)
         if userData != None and len(userData) > 0:
-            if userData[2] == self.hash256.hexdigest():
+            if userData[2] == hashlib.sha224(password).hexdigest():
                 return True
 
         return False

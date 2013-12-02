@@ -1,10 +1,9 @@
 __author__ = 'justin'
 
-from LocalMachine.LMInterface import LMInterface
+from LocalMachine.LMInterface import client_Interface
 
 def main():
-    l = LMInterface.LMInterface()
-
+    client_Interface.clientInterface()
 
 if __name__== '__main__':
     main()
