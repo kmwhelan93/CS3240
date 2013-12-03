@@ -24,9 +24,9 @@ class loginWindow:
         self.passwordLabel = Label(self.lwin, text="Password:", padx=5, pady=5)
         self.passwordLabel.grid(row=2, columnspan=1)
 
-        self.usernameEntry = Entry(self.lwin, width=40)
+        self.usernameEntry = Entry(self.lwin, width=40, bg="white")
         self.usernameEntry.grid(row=1, column=1, columnspan=2)
-        self.passwordEntry = Entry(self.lwin, width=40, show="*")
+        self.passwordEntry = Entry(self.lwin, width=40, show="*", bg="white")
         self.passwordEntry.grid(row=2, column=1, columnspan=2)
 
         self.loginButton = Button(self.lwin, text="Login", width=40,
@@ -44,7 +44,7 @@ class loginWindow:
         self.directoryLabel = Label(self.lwin, text="Directory:", padx=5, pady=5)
         self.directoryLabel.grid(row=5, column=0, columnspan=1)
 
-        self.directoryEntry = Entry(self.lwin, width=40)
+        self.directoryEntry = Entry(self.lwin, width=40, bg="white")
         self.directoryEntry.grid(row=5, column=1, columnspan=2)
 
         self.setUpButton = Button(self.lwin, text="Sign Up", width=40,
@@ -54,7 +54,7 @@ class loginWindow:
         self.ipLabel = Label(self.lwin, text="Server IP:")
         self.ipLabel.grid(row = 7, column=0)
 
-        self.ipEntry = Entry(self.lwin, width=15)
+        self.ipEntry = Entry(self.lwin, width=15, bg="white")
         self.ipEntry.grid(row=7, column=1, columnspan=2)
 
         self.UI.center(self.lwin)
