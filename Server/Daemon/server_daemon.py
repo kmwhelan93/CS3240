@@ -18,6 +18,7 @@
 EX: folder structure first, first/second, first/second/third, ctrl+z --> first, second, second/third'''
 
 import os
+import sys
 import shutil
 import optparse
 from common import get_timestamps
@@ -83,7 +84,6 @@ class FileTransferProtocol(basic.LineReceiver):
             self.sendLine(json.dumps(retVal))
         elif command == 'create':
             print "Receiving create for " + data['file']
-            self.factory.db.recordTrans(data['username'], "create", 0, data["file"])
             if data['what'] == 'directory':
                 path = os.path.join(self.factory.files_path, data["username"], data['file'])
                 if not os.path.exists(path):
@@ -94,6 +94,8 @@ class FileTransferProtocol(basic.LineReceiver):
         elif command == 'get':
             #TODO GET DOESNT WORK FOR DIRECTORIES
             self.factory.db.recordTrans(data['username'], "get", 0, "/")
+            if not os.path.exists(os.path.join(self.factory.files_path, data['username'])):
+                os.mkdir(os.path.join(self.factory.files_path, data['username']))
             timestamps = get_timestamps(os.path.join(self.factory.files_path, data['username']))
             retVal = dict(retVal.items() + {'files': {}, 'directories': [], "remove": []}.items())
             for file, stamp in timestamps.iteritems():
@@ -177,8 +179,6 @@ class FileTransferServerFactory(protocol.ServerFactory):
         self.files = None
 
     def auth(self, username, password):
-        print username, password
-        print self.db.authUser('kevin', 'kevin')
         return self.db.authUser(username, password)
 
     def register(self, username, password):
@@ -194,7 +194,9 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     if (options.path == None):
-        options.path = "/home/student/Documents/CSA/server/" #os.path.join("C:\Users\Venkat\Documents", "test folder")
+        #options.path = "/home/student/Documents/CSA/server/" #os.path.join("C:\Users\Venkat\Documents", "test folder")
+        print "NO PATH SPECIFIED"
+        sys.exit(1)
 
     display_message('Listening on port %d, serving files from directory: %s' % (options.port, options.path))
     db = Server.DbOps.DbOps(options.path)

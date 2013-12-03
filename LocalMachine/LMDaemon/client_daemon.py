@@ -5,7 +5,7 @@ from Queue import Queue
 import thread
 import time
 import logging
-
+import sys
 import json
 from common import get_timestamps
 
@@ -163,11 +163,20 @@ class EchoClientFactory(ClientFactory):
     def clientConnectionFailed(self, connector, reason):
         print 'Connection failed. Reason:', reason
 
-
-files_path = '/home/student/Documents/CSA/local/'
-server_ip = 'localhost'
-#KEVIN: 172.25.108.150
-#VENKAT: 172.27.108.88
+parser = optparse.OptionParser()
+parser.add_option('--path', action='store', type='string', dest='path',
+                      help='local directory for syncing')
+parser.add_option('--ip', action='store', type='string', dest='ip',
+                      help='Server IP')
+(options, args) = parser.parse_args()
+if (options.path is None):
+    print "No path specified"
+    sys.exit(1)
+if (options.ip is None):
+    print "No server IP specified"
+    sys.exit(1)
+files_path = options.path
+server_ip = options.ip
 
 def watchDog(base_path, q, ignore):
     logging.basicConfig(level=logging.INFO,
@@ -195,11 +204,3 @@ factory = EchoClientFactory(q, files_path, ignore, server_ip = server_ip, )
 #reactor.connectTCP("localhost", 1234, factory)
 reactor.connectTCP(server_ip, 1234, factory)
 reactor.run()
-
-
-
-
-
-
-
-

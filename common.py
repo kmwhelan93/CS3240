@@ -90,3 +90,18 @@ def get_timestamps(base_path):
         timestamps[rel_path] = timestamps[path]
         timestamps.pop(path, timestamps[path])
     return timestamps
+
+def bytes_from_file(filename, chunksize=8192):
+    with open(filename, "rb") as f:
+        while True:
+            chunk = f.read(chunksize)
+            if chunk:
+                for b in chunk:
+                    yield b
+            else:
+                break
+
+def bytes_to_string(file_path):
+    bytes = bytearray()
+    for b in bytes_from_file(file_path):
+        bytes += b
