@@ -9,7 +9,7 @@ class loginWindow:
         self.UI = clientInterface
 
         self.lwin = Toplevel(self.UI.root,  padx=10, pady=10)
-        self.lwin.protocol('WM_DELETE_WINDOW', self.closeWindow)
+        self.lwin.protocol('WM_DELETE_WINDOW', self.UI.root.destroy)
         self.lwin.title("Login to OneDir Preferences")
 
         self.loginText = StringVar()
