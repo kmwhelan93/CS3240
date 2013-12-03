@@ -160,5 +160,5 @@ class preferenceOperations:
             return True
 
     def checkStartDaemon(self, username):
-        if self.getAutoSyncSetting(self, username):
+        if self.getAutoSyncSetting(username):
             subprocess.Popen(["python", "Server/Daemon/server_daemon.py", "--path", self.getDirectoryPath(username)])
