@@ -51,7 +51,7 @@ class loginWindow:
                 command=lambda:self.signup(self.usernameEntry.get(), self.passwordEntry.get(), self.directoryEntry.get()))
         self.setUpButton.grid(row=6, column=0, columnspan=3)
 
-        self.ipLabel = Label(self.lwin)
+        self.ipLabel = Label(self.lwin, text="Server IP:")
         self.ipLabel.grid(row = 7, column=0)
 
         self.ipEntry = Entry(self.lwin, width=15)
