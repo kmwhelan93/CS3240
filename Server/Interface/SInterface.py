@@ -5,7 +5,7 @@ from ttk import Frame, Style
 from Server import DbOps
 from idlelib.WidgetRedirector import WidgetRedirector
 import tkMessageBox
-from PIL import Image, ImageTk
+from PIL import ImageTk
 import subprocess
 import threading
 import Queue

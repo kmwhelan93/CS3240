@@ -17,8 +17,6 @@ class DbOps:
         self.db = sqlite3.connect(db_path)
         # Get a cursor object for operations
         self.cur = self.db.cursor()
-        # Get a SHA3 256 bit hasher for storing passwords
-        self.hash256 = hashlib.sha256()
         self.setup()
         self.start()
 
@@ -41,7 +39,7 @@ class DbOps:
 
     def createUser(self, userName, password):
         if not self.userExists(userName):
-            self.cur.execute("INSERT INTO user VALUES(?,?,?,?)",[None, userName, hashlib.sha224(password).hexdigest(), datetime.now()])
+            self.cur.execute("INSERT INTO user VALUES(?,?,?,?)",[None, userName, hashlib.sha256(password).hexdigest(), datetime.now()])
             self.db.commit()
             return True
         else:
@@ -53,7 +51,7 @@ class DbOps:
 
     def updatePassword(self, userName, password):
         if self.userExists(userName):
-            self.cur.execute("UPDATE user SET password=? WHERE username=?", [ hashlib.sha224(password).hexdigest(),userName])
+            self.cur.execute("UPDATE user SET password=? WHERE username=?", [ hashlib.sha256(password).hexdigest(),userName])
             self.db.commit()
             return True
         else:
@@ -63,7 +61,7 @@ class DbOps:
         self.cur.execute('SELECT * FROM user WHERE username=?',[userName])
         userData = self.cur.fetchone()
         if userData != None and len(userData) > 0:
-            if userData[2] == hashlib.sha224(password).hexdigest():
+            if userData[2] == hashlib.sha256(password).hexdigest():
                 return True
 
         return False
