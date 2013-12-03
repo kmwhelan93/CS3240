@@ -55,7 +55,7 @@ class loginWindow:
         self.ipLabel.grid(row = 7, column=0)
 
         self.ipEntry = Entry(self.lwin, width=15)
-        self.ipEntry.grid(self.lwin, row=7, column=1, columnspan=2)
+        self.ipEntry.grid(row=7, column=1, columnspan=2)
 
         self.UI.center(self.lwin)
 
