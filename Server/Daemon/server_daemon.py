@@ -40,6 +40,8 @@ class FileTransferProtocol(basic.LineReceiver):
         self.file_data = ()
         self.sendLine("init")
 
+        self.c_interface_commands = ['authenticate', 'register']
+
         display_message(
             'Connection from: %s (%d clients total)' % (self.transport.getPeer().host, len(self.factory.clients)))
 
@@ -57,7 +59,7 @@ class FileTransferProtocol(basic.LineReceiver):
         retVal = {"done": True, 'success': True}
         print line
         # authenticate
-        if not self.factory.auth(data['username'], data['password']):
+        if (not self.factory.auth(data['username'], data['password'])) and not command in self.c_interface_commands:
             retVal['success'] = False
             self.sendLine(json.dumps(retVal))
             return
@@ -71,7 +73,15 @@ class FileTransferProtocol(basic.LineReceiver):
             if os.path.exists(os.path.join(self.factory.files_path, data["username"], data['src'])):
                 os.renames(os.path.join(self.factory.files_path, data["username"], data['src']), os.path.join(self.factory.files_path, data['username'], data['dest']))
             self.sendLine(json.dumps(retVal))
-
+        elif command == 'register':
+            print 'Receiving register for username ' + data['username']
+            success = self.factory.db.createUser(data['username'], data['password'])
+            self.sendLine(json.dumps({'success': success}))
+            return
+        elif command == 'authenticate':
+            retVal['success'] = self.factory.auth(data['username'], data['password'])
+            self.sendLine(json.dumps(retVal))
+            return
         elif command == "delete":
             print "Receiving delete of " + data["what"] + " " + data['file']
             self.factory.db.recordTrans(data['username'], "delete", 0, data["what"] + " " + data['file'])
