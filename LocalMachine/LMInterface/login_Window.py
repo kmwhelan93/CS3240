@@ -92,10 +92,9 @@ class loginWindow:
 
     def signup(self, username, password, directory):
 
-        if ( (self.UI.prefOps.userExistsGlobally(username) == False) &
-                 ( self.UI.prefOps.validDirectoryPath(directory) == True) & (len(password) > 0)):
+        if ( self.UI.prefOps.validDirectoryPath(directory) == True) & (len(password) > 0):
             self.UI.prefOps.createUser(username, password, directory)
-            self.UI.setUpText.set("You have successfully set up you OneDir directory on this machine.")
+            self.setUpText.set("You have successfully set up you OneDir directory on this machine.")
             self.setUpStatus.config(fg="green")
             self.UI.passwordLength = len(password)
             self.UI.initUI(username, password)
@@ -112,3 +111,4 @@ class loginWindow:
     def closeWindow(self):
         self.lwin.destroy()
         return
+

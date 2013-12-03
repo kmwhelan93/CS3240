@@ -5,6 +5,7 @@ from login_Window import loginWindow
 from password_Window import passwordWindow
 from directory_Window import directoryWindow
 from LocalMachine.preferences_Operations import preferenceOperations
+import Queue
 from PIL import Image, ImageTk
 
 
@@ -90,3 +91,7 @@ class clientInterface:
         # This seems to draw the window frame immediately, so only call deiconify()
         # after setting correct window position
         win.deiconify()
+
+
+
+

@@ -218,6 +218,7 @@ def watchDog(base_path, q, ignore):
 q = Queue()
 ignore = []
 
+
 thread.start_new_thread(watchDog, (files_path, q, ignore))
 
 
