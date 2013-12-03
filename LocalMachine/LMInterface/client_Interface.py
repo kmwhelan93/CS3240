@@ -18,8 +18,8 @@ class clientInterface:
         self.userRow = None
         self.passwordLength = 0
 
-    def initUI(self, username):
-        self.prefOps.checkStartDaemon(username)
+    def initUI(self, username, password):
+        self.prefOps.checkStartDaemon(username, password)
         self.root.title("OneDir Local User Preferences Interface")
         self.root.config(padx=10, pady=10)
         self.userRow = self.prefOps.getUserRow(username)
@@ -54,7 +54,7 @@ class clientInterface:
 
         self.autosyncCheck = Checkbutton(self.root, text="Select to enable Autosync",
                                          variable=self.autosyncVar, padx=5, pady=5,
-                                         command=lambda: self.prefOps.updateAutoSyncSetting(self.userRow[0]))
+                                         command=lambda: self.prefOps.updateAutoSyncSetting(self.userRow[0], password))
         self.autosyncCheck.grid(row=3, column=1, columnspan=2)
 
         self.changePasswordButton = Button(self.root, text="Change Password", command=lambda: passwordWindow(self))
