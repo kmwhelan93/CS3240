@@ -29,7 +29,9 @@ import optparse
 class Echo(LineReceiver):
     delimiter = '\n'
 
-    def __init__(self, q, ignore, files_path, server_ip='127.0.0.1', server_port=1234):
+    def __init__(self, q, ignore, files_path, username, password, server_ip='127.0.0.1', server_port=1234):
+        self.username = username
+        self.password = password
         self.q = q
         self.server_ip = server_ip
         self.server_port = server_port
@@ -50,8 +52,8 @@ class Echo(LineReceiver):
         task.LoopingCall(self.get_files).start(3)
 
     def get_files(self):
-        username = "kevin"
-        password = "kevin"
+        username = self.username
+        password = self.password
         timestamps = get_timestamps(self.files_path)
         object = {"command": "get", "username": username, "password": password, "timestamps": timestamps}
         self.q.put(object)
@@ -101,9 +103,9 @@ class Echo(LineReceiver):
 
     def _sendCommand(self, object):
         self.command_out = True
-        object["username"] = "kevin"
-        object["password"] = "kevin"
-        sendObj = {"username": "kevin", "password": "kevin"}
+        object["username"] = self.username
+        object["password"] = self.password
+        sendObj = {"username": self.username, "password": self.password}
         command = object["command"]
         if command == 'move' or command=='create' or command=='get' or command=="delete":
             if (command=='create' or command=="delete") and object['file'] in self.ignore:
@@ -143,18 +145,20 @@ class Echo(LineReceiver):
 
 
 class EchoClientFactory(ClientFactory):
-    def __init__(self, q, files_path, ignore, server_ip):
+    def __init__(self, q, files_path, ignore, server_ip, username, password):
         self.q = q
         self.files_path = files_path
         self.ignore = ignore
         self.server_ip = server_ip
+        self.username = username
+        self.password = password
 
     def startedConnecting(self, connector):
         print 'Started to connect.'
 
     def buildProtocol(self, addr):
         print 'Connected.'
-        self.echo = Echo(self.q, self.ignore, self.files_path, self.server_ip)
+        self.echo = Echo(self.q, self.ignore, self.username, self.password, self.files_path, self.server_ip)
         return self.echo
 
     def clientConnectionLost(self, connector, reason):
@@ -168,9 +172,21 @@ parser.add_option('--path', action='store', type='string', dest='path',
                       help='local directory for syncing')
 parser.add_option('--ip', action='store', type='string', dest='ip',
                       help='Server IP')
+parser.add_option('--user', action='store', type='string', dest='user',
+                      help='Username')
+parser.add_option('--password', action='store', type='string', dest='password',
+                      help='Password')
 (options, args) = parser.parse_args()
 
 server_ip = ""
+username = ""
+password = ""
+if (options.user is None):
+    print "No username specified"
+    sys.exit(1)
+if (options.password is None):
+    print "No password specified"
+    sys.exit(1)
 if (options.path is None):
     print "No path specified"
     sys.exit(1)
@@ -179,6 +195,8 @@ if (options.ip is None):
     server_ip = "localhost"
 else:
     server_ip = options.ip
+username = options.user
+password = options.password
 files_path = options.path
 
 def watchDog(base_path, q, ignore):
@@ -203,7 +221,7 @@ ignore = []
 thread.start_new_thread(watchDog, (files_path, q, ignore))
 
 
-factory = EchoClientFactory(q, files_path, ignore, server_ip = server_ip, )
+factory = EchoClientFactory(q, files_path, ignore, server_ip = server_ip, username, password)
 #reactor.connectTCP("localhost", 1234, factory)
 reactor.connectTCP(server_ip, 1234, factory)
 reactor.run()
