@@ -132,7 +132,7 @@ class preferenceOperations:
             AutoSync = 1
             self.cur.execute("UPDATE Preferences SET AutoSync = ? WHERE Username =?", (AutoSync, username))
             self.con.commit()
-            subprocess.Popen(["python", "Server/Daemon/server_daemon.py", "--path", curUser[3]])
+            subprocess.Popen(["python", "LocalMachine/LMDaemon/client_daemon.py", "--path", curUser[3]])
             print "AutoSync setting has been turned on."
             return
         else:
@@ -161,4 +161,4 @@ class preferenceOperations:
 
     def checkStartDaemon(self, username):
         if self.getAutoSyncSetting(username):
-            subprocess.Popen(["python", "Server/Daemon/server_daemon.py", "--path", self.getDirectoryPath(username)])
+            subprocess.Popen(["python", "LocalMachine/LMDaemon/client_daemon.py", "--path", self.getDirectoryPath(username)])
