@@ -222,7 +222,7 @@ ignore = []
 thread.start_new_thread(watchDog, (files_path, q, ignore))
 
 
-factory = EchoClientFactory(q, files_path, ignore, server_ip = server_ip, username, password)
+factory = EchoClientFactory(q, files_path, ignore, server_ip, username, password)
 #reactor.connectTCP("localhost", 1234, factory)
 reactor.connectTCP(server_ip, 1234, factory)
 reactor.run()
