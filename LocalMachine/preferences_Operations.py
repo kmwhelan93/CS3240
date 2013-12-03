@@ -8,6 +8,7 @@ import os
 import sys
 import getpass
 import hashlib
+import subprocess
 
 class preferenceOperations:
 
@@ -131,12 +132,21 @@ class preferenceOperations:
             AutoSync = 1
             self.cur.execute("UPDATE Preferences SET AutoSync = ? WHERE Username =?", (AutoSync, username))
             self.con.commit()
+            subprocess.Popen(["python", "Server/Daemon/server_daemon.py", "--path", curUser[3]])
             print "AutoSync setting has been turned on."
             return
         else:
             AutoSync = 0
             self.cur.execute("UPDATE Preferences SET AutoSync= ? WHERE Username = ?", (AutoSync, username))
             self.con.commit()
+            ps = subprocess.Popen("ps -ef | grep client_daemon.py | grep -v grep", shell=True, stdout=subprocess.PIPE)
+            output = ps.stdout.read()
+            ps.stdout.close()
+            ps.wait()
+            if len(output) > 3:
+                procstring = output.split()
+                pid = procstring[1]
+                os.kill(pid)
             print "AutoSync setting has been turned off."
             return
 
@@ -149,3 +159,6 @@ class preferenceOperations:
             print "Directory path is valid."
             return True
 
+    def checkStartDaemon(self, username):
+        if self.getAutoSyncSetting(self, username):
+            subprocess.Popen(["python", "Server/Daemon/server_daemon.py", "--path", self.getDirectoryPath(username)])

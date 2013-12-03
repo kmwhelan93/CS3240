@@ -50,6 +50,13 @@ class loginWindow:
         self.setUpButton = Button(self.lwin, text="Sign Up", width=40,
                 command=lambda:self.signup(self.usernameEntry.get(), self.passwordEntry.get(), self.directoryEntry.get()))
         self.setUpButton.grid(row=6, column=0, columnspan=3)
+
+        self.ipLabel = Label(self.lwin)
+        self.ipLabel.grid(row = 7, column=0)
+
+        self.ipEntry = Entry(self.lwin, width=15)
+        self.ipEntry.grid(self.lwin, row=7, column=1, columnspan=2)
+
         self.UI.center(self.lwin)
 
 

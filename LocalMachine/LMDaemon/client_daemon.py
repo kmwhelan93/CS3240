@@ -169,14 +169,17 @@ parser.add_option('--path', action='store', type='string', dest='path',
 parser.add_option('--ip', action='store', type='string', dest='ip',
                       help='Server IP')
 (options, args) = parser.parse_args()
+
+server_ip = ""
 if (options.path is None):
     print "No path specified"
     sys.exit(1)
 if (options.ip is None):
-    print "No server IP specified"
-    sys.exit(1)
+    print "No server IP specified assuming localhost"
+    server_ip = "localhost"
+else:
+    server_ip = options.ip
 files_path = options.path
-server_ip = options.ip
 
 def watchDog(base_path, q, ignore):
     logging.basicConfig(level=logging.INFO,

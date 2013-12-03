@@ -7,8 +7,8 @@ from directory_Window import directoryWindow
 from LocalMachine.preferences_Operations import preferenceOperations
 from PIL import Image, ImageTk
 
-class clientInterface:
 
+class clientInterface:
     def __init__(self):
         self.root = Tk()
         self.prefOps = preferenceOperations()
@@ -19,11 +19,10 @@ class clientInterface:
         self.passwordLength = 0
 
     def initUI(self, username):
-
+        self.prefOps.checkStartDaemon(username)
         self.root.title("OneDir Local User Preferences Interface")
         self.root.config(padx=10, pady=10)
         self.userRow = self.prefOps.getUserRow(username)
-
 
         self.usernameVar = StringVar()
         self.passwordVar = StringVar()
@@ -54,8 +53,8 @@ class clientInterface:
         self.directoryEntry.grid(row=2, column=1, columnspan=2)
 
         self.autosyncCheck = Checkbutton(self.root, text="Select to enable Autosync",
-                                    variable=self.autosyncVar, padx=5, pady=5,
-                                    command=lambda:self.prefOps.updateAutoSyncSetting(self.userRow[0]))
+                                         variable=self.autosyncVar, padx=5, pady=5,
+                                         command=lambda: self.prefOps.updateAutoSyncSetting(self.userRow[0]))
         self.autosyncCheck.grid(row=3, column=1, columnspan=2)
 
         self.changePasswordButton = Button(self.root, text="Change Password", command=lambda: passwordWindow(self))
@@ -72,7 +71,7 @@ class clientInterface:
     def blankPassword(self, length):
         blank = ""
         for i in range(length):
-            blank+="*"
+            blank += "*"
 
         return blank
 
@@ -88,9 +87,3 @@ class clientInterface:
         # This seems to draw the window frame immediately, so only call deiconify()
         # after setting correct window position
         win.deiconify()
-
-
-
-
-
-
