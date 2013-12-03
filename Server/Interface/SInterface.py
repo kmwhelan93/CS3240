@@ -245,7 +245,7 @@ class DaemonView(Frame):
                 self.log.insert(END, msg + "\n", ('errorstring',))
         except Queue.Empty:
             pass
-
+        self.log.see(END)
         self.parent.after(50, self.update)
 
 # The main class for this module. This class is the controller and defines the behaviours.
