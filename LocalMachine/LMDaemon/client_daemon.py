@@ -29,7 +29,7 @@ import optparse
 class Echo(LineReceiver):
     delimiter = '\n'
 
-    def __init__(self, q, ignore, files_path='/home/student/Documents/CSA/local/', server_ip='127.0.0.1', server_port=1234):
+    def __init__(self, q, ignore, files_path, server_ip='127.0.0.1', server_port=1234):
         self.q = q
         self.server_ip = server_ip
         self.server_port = server_port

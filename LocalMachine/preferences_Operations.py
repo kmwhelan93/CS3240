@@ -9,6 +9,7 @@ import sys
 import getpass
 import hashlib
 import subprocess
+import signal
 
 class preferenceOperations:
 
@@ -28,7 +29,7 @@ class preferenceOperations:
         result = self.cur.fetchall()
 
         if len(result) == 0:
-            self.createUser("User1", "password1", "/home/student/PycharmProjects")
+            self.createUser("User1", "password1", "/home/justin/wiki")
             self.con.commit()
         else:
             self.con.commit()
@@ -146,7 +147,8 @@ class preferenceOperations:
             if len(output) > 3:
                 procstring = output.split()
                 pid = procstring[1]
-                os.kill(pid)
+                print int(pid)
+                print os.kill(int(pid), signal.SIGKILL)
             print "AutoSync setting has been turned off."
             return
 
