@@ -2,17 +2,21 @@ __author__ = 'justin'
 #from http://stackoverflow.com/questions/16761458/how-to-aes-encrypt-decrypt-files-using-python-pycrypto-in-an-openssl-compatible
 from Crypto.Cipher import AES
 from Crypto import Random
+import hashlib
 
 BS = 16
 pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
 unpad = lambda s : s[0:-ord(s[-1])]
 
 class AESCipher:
-    def __init__( self, key ):
+    def __init__( self, password ):
         """
         Requires hex encoded param as a key
         """
-        self.key = key.decode("hex")
+        m = hashlib.md5()
+        m.update(password)
+        self.key = m.hexdigest()
+
 
     def encrypt( self, raw ):
         """
@@ -34,10 +38,9 @@ class AESCipher:
         return unpad(cipher.decrypt( enc))
 
 if __name__== "__main__":
-    key = "140b43b22a29bef4061bda66b6747e14"
+    password = "password"
     text = "hello my name is venkat";
-    key=key[:32]
-    encrypt_decrypt = AESCipher(key)
+    encrypt_decrypt = AESCipher(password)
     encrypted_text = encrypt_decrypt.encrypt(text)
     decrypted_text = encrypt_decrypt.decrypt(encrypted_text)
     print "%s" % decrypted_text

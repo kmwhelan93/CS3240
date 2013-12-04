@@ -133,8 +133,11 @@ class FileTransferProtocol(basic.LineReceiver):
             if os.path.exists(file_path):
                 self.setRawMode()
                 for bytes in read_bytes_from_file(file_path):
-
-                    self.transport.write(bytes)
+                    encrypt_decrypt = AESCipher(data['password'])
+                    encrypted_text = encrypt_decrypt.encrypt(bytes)
+                    decrypted_text = encrypt_decrypt.decrypt(encrypted_text)
+                    print "%s" % decrypted_text
+                    self.transport.write(encrypted_text)
 
                 self.transport.write('\r\n')
 

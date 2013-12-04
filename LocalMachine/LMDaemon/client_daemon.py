@@ -8,6 +8,7 @@ import logging
 import sys
 import json
 from common import get_timestamps
+from crypt import AESCipher
 
 from twisted.internet.protocol import Protocol, ClientFactory
 from sys import stdout
@@ -97,6 +98,9 @@ class Echo(LineReceiver):
             self.factory.command_out = False
             self.factory.file_syncing = None
         else:
+            encrypt_decrypt = AESCipher(self.password)
+            decrypted_text = encrypt_decrypt.decrypt(data)
+            print "%s" % decrypted_text
             self.file_handler.write(data)
     def lineReceived(self, data):
         print 'data received ' + data
