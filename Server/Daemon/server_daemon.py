@@ -138,7 +138,7 @@ class FileTransferProtocol(basic.LineReceiver):
 
                 self.transport.write('\r\n')
 
-                # When the transfer is finished, we go back to the line mode    
+                # When the transfer is finished, we go back to the line mode
                 self.setLineMode()
             else:
                 self.sendLine("FILEDOESNOTEXISTFAIL2389")
