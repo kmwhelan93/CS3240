@@ -69,13 +69,6 @@ class Echo(LineReceiver):
             return
         data = json.loads(data)
         self.ciq.append(data)
-        if data['type'] == 'register':
-            print 'register!'
-        elif data['type'] == 'authenticate':
-            #self.factory.ci.loginWindow.loginResponse(data)
-            print 'authenticate!'
-        elif data['type'] == 'change password':
-            print 'change password'
 
 
 

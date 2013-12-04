@@ -66,9 +66,13 @@ class passwordWindow:
 
         elif (len(np1)+len(np2) >= 10) & (np1 == np2):
             self.user = self.UI.userRow[0]
+            self.op = op
             self.np = np1
             self.lock = True
             #kevin
+            #{'command': 'change password', 'username':'<username>', 'old_password':'<password>', 'new_password':'<new_password>'}
+            object = {'command': 'change password', 'username': self.user, 'old_password': self.op, 'new_password': self.np}
+            self.UI.commq.append(object)
 
     def changePasswordResponse(self, response):
         #kevin

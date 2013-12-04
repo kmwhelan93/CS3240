@@ -14,12 +14,10 @@ class clientInterface:
     def __init__(self, ciq, commq):
         self.ciq = ciq
         self.commq = commq
-        self.task_id = task.LoopingCall(self.callback)
-        self.task_id.start(.5)
-
         self.root = Tk()
         self.prefOps = preferenceOperations()
         self.root.withdraw()
+        self.callback()
         self.loginWindow = loginWindow(self)
         self.root.mainloop()
         self.userRow = None
@@ -29,7 +27,13 @@ class clientInterface:
         if (len(self.ciq) > 0):
             object = self.ciq.pop(0)
             if object['type'] == 'authenticate':
-                print 'authenticate'
+                self.loginWindow.loginResponse(object)
+            elif object['type'] == 'register':
+                self.loginWindow.signupResponse(object)
+            elif object['type'] == 'change password':
+                # justin call changePasswordResponse on passwordWindow
+                print 'change password!'
+        self.root.after(500, self.callback)
 
     def initUI(self, username, password):
         self.prefOps.checkStartDaemon(username, password)

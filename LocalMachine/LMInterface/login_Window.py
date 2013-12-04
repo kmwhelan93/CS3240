@@ -118,6 +118,8 @@ class loginWindow:
             self.lock = True
             #kevin
             #CREATE AND SEND OBJECT
+            object = {'command': 'register', 'username': username, 'password': password}
+            self.UI.commq.append(object)
 
     def signupResponse(self, response):
         #kevin
