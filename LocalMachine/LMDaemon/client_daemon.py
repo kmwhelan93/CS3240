@@ -29,7 +29,7 @@ import optparse
 class Echo(LineReceiver):
     delimiter = '\n'
 
-    def __init__(self, q, ignore, files_path, username, password, server_ip='127.0.0.1', server_port=1234):
+    def __init__(self, q, ignore, files_path, username, password, factory, server_ip='127.0.0.1', server_port=1234):
         self.username = username
         self.password = password
         self.q = q
@@ -38,17 +38,18 @@ class Echo(LineReceiver):
         self.files_path = files_path
         self.connected = False
         self.ignore = ignore
+        self.file_to_update = None
+        self.factory = factory
 
         self.file_handler = None
         self.file_data = ()
-        self.command_out = False
 
     def connectionMade(self):
         self.connected = False
         self.task_id = task.LoopingCall(self.callback)
         self.task_id.start(.5)
         self.setLineMode()
-        #task.LoopingCall(self.get_files).start(3)
+        task.LoopingCall(self.get_files).start(10)
 
     def get_files(self):
         username = self.username
@@ -59,18 +60,41 @@ class Echo(LineReceiver):
 
     def callback(self):
         #print 'callback'
-        if (self.connected == True and self.command_out == False and self.q.qsize() > 0):
+        print 'COMMAND OUT ', self.factory.command_out
+        if (self.connected == True and self.factory.command_out == False and self.q.qsize() > 0):
             #print 'sending command'
             self._sendCommand(self.q.get())
 
-    def dataReceived(self, data):
+
+    def rawDataReceived(self, data):
+        if 'FILEDOESNOTEXISTFAIL2389' in data:
+            self.factory.command_out = False
+            self.setLineMode()
+            self.file_handler = None
+            return
+        file_path = self.file_to_update
+        print self.factory.command_out
+        if not self.file_handler:
+            self.file_handler = open(file_path, 'wb')
+        if '\r\n' in data:
+            # Last chunk
+            data = data[:-2]
+            self.file_handler.write(data)
+            self.setLineMode()
+
+            self.file_handler.close()
+            self.file_handler = None
+            self.factory.command_out = False
+        else:
+            self.file_handler.write(data)
+    def lineReceived(self, data):
         print 'data received ' + data
-        if (data == "init\n"):
+        print data
+        if (data == "init"):
             self.connected = True
         else:
             files = json.loads(data.strip())
             if 'command' in files and files['command'] == 'put':
-                print 'confirmation received. sending file'
                 self.setRawMode()
                 for bytes in read_bytes_from_file(files['local_file_path']):
                     self.sendLine(bytes)
@@ -79,10 +103,12 @@ class Echo(LineReceiver):
 
                 # When the transfer is finished, we go back to the line mode
                 self.setLineMode()
+                return
             elif 'command' in files and files['command'] == 'done uploading':
-                print 'File successfully transferred!'
-            if files['success'] == False:
+                self.factory.command_out = False
+            elif files['success'] == False:
                 print 'Authentication failed with username: ' + self.username + ' and password: ' + self.password
+                self.factory.command_out = False
             elif "directories" in files.keys():
             # get directories first
                 files['directories'].sort()
@@ -102,50 +128,57 @@ class Echo(LineReceiver):
                     path = os.path.join(self.files_path, directory)
                     if not os.path.exists(path):
                         os.mkdir(path)
-                    self.ignore.append(path)
+                    self.ignore.append(self.clean_file_string(directory))
                 # because files need the directories to exist
-                for file, content in files['files'].iteritems():
+                # TODO THIS NEEDS TO CHANGE
+                for file in files['files']:
                     path = os.path.join(self.files_path, file)
-                    f = open(path, 'w')
-                    f.write(content['content'] +'')
-                    f.close()
-                    self.ignore.append(path)
-        self.command_out = False
+                    q.put({'command': 'get_file', 'rel_path': file})
+                self.factory.command_out = False
+            elif files['success'] == True:
+                self.factory.command_out = False
 
     def _sendCommand(self, object):
-        self.command_out = True
+        self.factory.command_out = True
         object["username"] = self.username
         object["password"] = self.password
         sendObj = {"username": self.username, "password": self.password}
         command = object["command"]
         print 'command to be sent: ' + json.dumps(object)
         print 'ignore is' + json.dumps(self.ignore)
-        if command == 'move' or command=='create' or command=='get' or command=="delete":
-            if (command=='create' or command=="delete") and object['file'] in self.ignore:
-                self.ignore.remove(object['file'])
-                self.command_out = False
+        if command in ['move', 'create', 'get', 'delete']:
+            if (command=='create' or command=="delete") and self.clean_file_string(object['file']) in self.ignore:
+                self.ignore.remove(self.clean_file_string(object['file']))
+                print 'ignored ' + object['file']
+                self.factory.command_out = False
                 return
             self.sendLine(json.dumps(object))
+        elif command == 'get_file':
+            self.file_to_update = os.path.join(self.files_path, self.clean_file_string(object['rel_path']))
+            self.ignore.append(self.clean_file_string(object['rel_path']))
+            self.setRawMode()
+            self.sendLine(json.dumps(object))
         elif command == 'put':
-            if object['file'] in self.ignore:
-                self.ignore.remove(object['file'])
-                self.command_out = False
+            if self.clean_file_string(object['file'].replace(self.files_path, "")) in self.ignore:
+                self.ignore.remove(self.clean_file_string(object['file'].replace(self.files_path, "")))
+                print 'ignored ' + object['file']
+                self.factory.command_out = False
                 return
             try:
                 file_path = object['file']
                 filename = object['file'].replace(self.files_path, "")
             except IndexError:
                 self._display_message('Missing local file path or remote file name')
-                self.command_out = False
+                self.factory.command_out = False
                 return
 
             if not os.path.isfile(file_path):
                 self._display_message('This file does not exist')
-                self.command_out = False
+                self.factory.command_out = False
                 return
 
             file_size = os.path.getsize(file_path) / 1024
-
+            print self.factory.command_out
             print 'Uploading file: %s (%d KB)' % (filename, file_size)
             object = {"command": "put", "relative_path": filename, 'local_file_path': file_path}
             sendObj = dict(object.items() + sendObj.items())
@@ -153,6 +186,12 @@ class Echo(LineReceiver):
 
     def _display_message(self, message):
         print message
+
+    def clean_file_string(self, string):
+        if (len(string) > 0):
+            if string[0] == '/':
+                return string[1:]
+        return string
 
 
 
@@ -164,13 +203,14 @@ class EchoClientFactory(ClientFactory):
         self.server_ip = server_ip
         self.username = username
         self.password = password
+        self.command_out = False
 
     def startedConnecting(self, connector):
         print 'Started to connect.'
 
     def buildProtocol(self, addr):
         print 'Connected.'
-        self.echo = Echo(q=self.q, ignore=self.ignore, username=self.username, password=self.password, files_path=self.files_path, server_ip=self.server_ip)
+        self.echo = Echo(q=self.q, ignore=self.ignore, username=self.username, password=self.password, files_path=self.files_path, server_ip=self.server_ip, factory=self)
         return self.echo
 
     def clientConnectionLost(self, connector, reason):

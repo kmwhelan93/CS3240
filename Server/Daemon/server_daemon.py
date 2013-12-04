@@ -66,7 +66,8 @@ class FileTransferProtocol(basic.LineReceiver):
             retVal['success'] = False
             self.sendLine(json.dumps(retVal))
             return
-
+        if not os.path.exists(os.path.join(self.factory.files_path, data['username'])):
+                os.mkdir(os.path.join(self.factory.files_path, data['username']))
         if not command in COMMANDS:
             self.sendLine(json.dumps(retVal))
             return
@@ -100,11 +101,13 @@ class FileTransferProtocol(basic.LineReceiver):
         elif command == 'create':
             print "Receiving create for " + data['file']
             if data['what'] == 'directory':
-                path = os.path.join(self.factory.files_path, data["username"], data['file'])
+                path = os.path.join(self.factory.files_path, data["username"], self.clean_file_string(data['file']))
                 if not os.path.exists(path):
                     os.mkdir(path)
             else:
-                os.mknod(os.path.join(self.factory.files_path, data["username"], data['file']))
+                path = os.path.join(self.factory.files_path, data["username"], self.clean_file_string(data['file']))
+                if not os.path.exists(path):
+                    os.mknod(path)
             self.sendLine(json.dumps(retVal))
         elif command == 'get':
             #TODO GET DOESNT WORK FOR DIRECTORIES
@@ -112,21 +115,32 @@ class FileTransferProtocol(basic.LineReceiver):
             if not os.path.exists(os.path.join(self.factory.files_path, data['username'])):
                 os.mkdir(os.path.join(self.factory.files_path, data['username']))
             timestamps = get_timestamps(os.path.join(self.factory.files_path, data['username']))
-            retVal = dict(retVal.items() + {'files': {}, 'directories': [], "remove": []}.items())
+            retVal = dict(retVal.items() + {'files': [], 'directories': [], "remove": []}.items())
             for file, stamp in timestamps.iteritems():
                 if (not file in data['timestamps'] or stamp > data['timestamps'][file]):
-                    path = os.path.join(self.factory.files_path, data['username'], file)
+                    path = os.path.join(self.factory.files_path, data['username'], self.clean_file_string(file))
                     if os.path.isdir(path):
                         retVal['directories'].append(file)
                     elif os.path.isfile(path):
-                        f = open(path, 'r')
-                        retVal['files'][file] = {"content": f.read()}
-                        f.close()
+                        retVal['files'].append(file)
             for file, stamp in data['timestamps'].iteritems():
                 if not file in timestamps:
                     retVal['remove'].append(file)
             #print retVal
             self.sendLine(json.dumps(retVal))
+        elif command == 'get_file':
+            file_path = os.path.join(self.factory.files_path, data['username'], self.clean_file_string(data['rel_path']))
+            if os.path.exists(file_path):
+                self.setRawMode()
+                for bytes in read_bytes_from_file(file_path):
+                    self.sendLine(bytes)
+
+                self.sendLine('\r\n')
+
+                # When the transfer is finished, we go back to the line mode
+                self.setLineMode()
+            else:
+                self.sendLine("FILEDOESNOTEXISTFAIL2389")
         elif command == 'put':
             try:
                 filename = self.clean_file_string(data["relative_path"])
