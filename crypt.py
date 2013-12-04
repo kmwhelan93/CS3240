@@ -1,42 +1,43 @@
 __author__ = 'justin'
 #from http://stackoverflow.com/questions/16761458/how-to-aes-encrypt-decrypt-files-using-python-pycrypto-in-an-openssl-compatible
-from hashlib import md5
 from Crypto.Cipher import AES
 from Crypto import Random
 
-def derive_key_and_iv(password, salt, key_length, iv_length):
-    d = d_i = ''
-    while len(d) < key_length + iv_length:
-        d_i = md5(d_i + password + salt).digest()
-        d += d_i
-    return d[:key_length], d[key_length:key_length+iv_length]
+BS = 16
+pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
+unpad = lambda s : s[0:-ord(s[-1])]
 
-def encrypt(in_file, out_file, password, key_length=32):
-    bs = AES.block_size
-    salt = Random.new().read(bs - len('Salted__'))
-    key, iv = derive_key_and_iv(password, salt, key_length, bs)
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    out_file.write('Salted__' + salt)
-    finished = False
-    while not finished:
-        chunk = in_file.read(1024 * bs)
-        if len(chunk) == 0 or len(chunk) % bs != 0:
-            padding_length = (bs - len(chunk) % bs) or bs
-            chunk += padding_length * chr(padding_length)
-            finished = True
-        out_file.write(cipher.encrypt(chunk))
+class AESCipher:
+    def __init__( self, key ):
+        """
+        Requires hex encoded param as a key
+        """
+        self.key = key.decode("hex")
 
-def decrypt(in_file, out_file, password, key_length=32):
-    bs = AES.block_size
-    salt = in_file.read(bs)[len('Salted__'):]
-    key, iv = derive_key_and_iv(password, salt, key_length, bs)
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    next_chunk = ''
-    finished = False
-    while not finished:
-        chunk, next_chunk = next_chunk, cipher.decrypt(in_file.read(1024 * bs))
-        if len(next_chunk) == 0:
-            padding_length = ord(chunk[-1])
-            chunk = chunk[:-padding_length]
-            finished = True
-        out_file.write(chunk)
+    def encrypt( self, raw ):
+        """
+        Returns hex encoded encrypted value!
+        """
+        raw = pad(raw)
+        iv = Random.new().read(AES.block_size);
+        cipher = AES.new( self.key, AES.MODE_CBC, iv )
+        return ( iv + cipher.encrypt( raw ) ).encode("hex")
+
+    def decrypt( self, enc ):
+        """
+        Requires hex encoded param to decrypt
+        """
+        enc = enc.decode("hex")
+        iv = enc[:16]
+        enc= enc[16:]
+        cipher = AES.new(self.key, AES.MODE_CBC, iv )
+        return unpad(cipher.decrypt( enc))
+
+if __name__== "__main__":
+    key = "140b43b22a29bef4061bda66b6747e14"
+    text = "hello my name is venkat";
+    key=key[:32]
+    encrypt_decrypt = AESCipher(key)
+    encrypted_text = encrypt_decrypt.encrypt(text)
+    decrypted_text = encrypt_decrypt.decrypt(encrypted_text)
+    print "%s" % decrypted_text

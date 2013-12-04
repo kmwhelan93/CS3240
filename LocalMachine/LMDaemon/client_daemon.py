@@ -65,7 +65,7 @@ class Echo(LineReceiver):
 
     def callback(self):
         #print 'callback'
-        print 'COMMAND OUT ', self.factory.command_out
+        #print 'COMMAND OUT ', self.factory.command_out
         if (self.connected == True and self.factory.command_out == False and len(q) > 0):
             #print 'sending command'
             first = q.pop(0)
@@ -109,6 +109,7 @@ class Echo(LineReceiver):
                 self.setRawMode()
                 for bytes in read_bytes_from_file(files['local_file_path']):
                     self.factory.connection.transport.write(bytes)
+
 
                 self.factory.connection.transport.write('\r\n')
 

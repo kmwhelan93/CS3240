@@ -22,7 +22,7 @@ import sys
 import shutil
 import optparse
 from common import get_timestamps
-
+from crypt import AESCipher
 import json
 import Server.DbOps
 from twisted.internet import reactor, protocol
@@ -133,11 +133,12 @@ class FileTransferProtocol(basic.LineReceiver):
             if os.path.exists(file_path):
                 self.setRawMode()
                 for bytes in read_bytes_from_file(file_path):
+
                     self.transport.write(bytes)
 
                 self.transport.write('\r\n')
 
-                # When the transfer is finished, we go back to the line mode
+                # When the transfer is finished, we go back to the line mode    
                 self.setLineMode()
             else:
                 self.sendLine("FILEDOESNOTEXISTFAIL2389")

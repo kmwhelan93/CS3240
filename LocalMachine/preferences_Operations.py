@@ -29,7 +29,7 @@ class preferenceOperations:
         result = self.cur.fetchall()
 
         if len(result) == 0:
-            self.createUser("User1", "password1", "/home/justin/wiki")
+            self.createUser("User1", "password1", "/home/venkat/Documents/CS3240Proj")
             self.con.commit()
         else:
             self.con.commit()
@@ -47,7 +47,6 @@ class preferenceOperations:
             return False
 
     def authenticateUser(self, username, password):
-
         self.cur.execute("SELECT * FROM Preferences WHERE Username =:Username", {"Username": username})
         userData = self.cur.fetchone()
         digest = hashlib.sha256(password).hexdigest()
