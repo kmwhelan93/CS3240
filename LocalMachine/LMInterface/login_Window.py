@@ -76,27 +76,28 @@ class loginWindow:
         else:
             self.lock = True
             #kevin
+            object = {'command': 'authenticate', 'username': username, 'password': password}
+            self.UI.commq.append(object)
             #Create and Login object here
 
     def loginResponse(self, response):
         #kevin
-        if response["status"] == "NOT_EXIST":
-            self.loginText.set("No record of this username on our servers. Choose your OneDir username, password, and directory.")
-            self.loginStatus.config(fg="blue")
-            self.setUpText.set("Click 'Set Up' to create your OneDir account and set up your OneDir directory on this machine. ")
-            self.setUpStatus.config(fg="blue")
-        if response["status"] == "WRONG_PASSWORD":
-            self.loginText.set("The username and password you have entered do not match. Please try again. ")
-            self.loginStatus.config(fg="red")
-            self.setUpText.set("Click 'Log In' to login to you OneDir Preferences. No need to specify a new directory. ")
-            self.setUpStatus.config(fg="red")
-        if response["status"] == "SUCCESS":
+        if response['success'] == True:
             if not self.UI.prefOps.userExistsLocally(self.username):
                 self.UI.prefOps.createUser(self.username, self.password, self.directory)
             self.UI.passwordLength = len(self.password)
             self.UI.initUI(self.username, self.password)
             self.closeWindow()
-            return
+        elif response['reason'] == 'user does not exist':
+            self.loginText.set("No record of this username on our servers. Choose your OneDir username, password, and directory.")
+            self.loginStatus.config(fg="blue")
+            self.setUpText.set("Click 'Set Up' to create your OneDir account and set up your OneDir directory on this machine. ")
+            self.setUpStatus.config(fg="blue")
+        elif response['reason'] == 'incorrect password':
+            self.loginText.set("The username and password you have entered do not match. Please try again. ")
+            self.loginStatus.config(fg="red")
+            self.setUpText.set("Click 'Log In' to login to you OneDir Preferences. No need to specify a new directory. ")
+            self.setUpStatus.config(fg="red")
 
         self.lock = False
 

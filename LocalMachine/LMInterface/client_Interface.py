@@ -5,12 +5,18 @@ from login_Window import loginWindow
 from password_Window import passwordWindow
 from directory_Window import directoryWindow
 from LocalMachine.preferences_Operations import preferenceOperations
+from twisted.internet import task
 import Queue
 from PIL import Image, ImageTk
 
 
 class clientInterface:
-    def __init__(self, factory):
+    def __init__(self, ciq, commq):
+        self.ciq = ciq
+        self.commq = commq
+        self.task_id = task.LoopingCall(self.callback)
+        self.task_id.start(.5)
+
         self.root = Tk()
         self.prefOps = preferenceOperations()
         self.root.withdraw()
@@ -19,7 +25,11 @@ class clientInterface:
         self.userRow = None
         self.passwordLength = 0
 
-        self.factory = factory
+    def callback(self):
+        if (len(self.ciq) > 0):
+            object = self.ciq.pop(0)
+            if object['type'] == 'authenticate':
+                print 'authenticate'
 
     def initUI(self, username, password):
         self.prefOps.checkStartDaemon(username, password)

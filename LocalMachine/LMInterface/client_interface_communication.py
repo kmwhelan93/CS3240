@@ -31,31 +31,52 @@ from client_Interface import clientInterface
 '''
 SEND COMMANDS WITH THE FOLLOWING FORMATS:
 {'command':'register', 'username':'<username>', 'password':'<password>'}
-    returns: {'success':<boolean>} indicating successful creation -- if false, user already exists
+    returns: {'type':'register', 'success':<boolean>} indicating successful creation -- if false, user already exists
 
 {'command': 'authenticate', 'username':'<username>', 'password':'<password>'}
-    returns {'success':<boolean>, 'reason':<reason>} -- <reason> is one of ['user does not exist', 'incorrect password']
+    returns {'type':'authenticate', 'success':<boolean>, 'reason':<reason>} -- <reason> is one of ['user does not exist', 'incorrect password']
 
 {'command': 'change password', 'username':'<username>', 'old_password':'<password>', 'new_password':'<new_password>'}
-    returns {'success':<boolean>, 'reason':<reason>} -- <reason> is one of ['user does not exist', 'incorrect password']
+    returns {'type':'change password', 'success':<boolean>, 'reason':<reason>} -- <reason> is one of ['user does not exist', 'incorrect password']
 '''
 class Echo(LineReceiver):
     delimiter = '\n'
 
-    def __init__(self, server_ip='127.0.0.1', server_port=1234):
+    def __init__(self, ciq, commq, factory, server_ip='127.0.0.1', server_port=1234):
         self.server_ip = server_ip
         self.server_port = server_port
         self.connected = False
+        self.factory = factory
+        self.ciq = ciq
+        self.commq = commq
 
     def connectionMade(self):
 
         self.connected = False
+        self.task_id = task.LoopingCall(self.callback)
+        self.task_id.start(.5)
         self.setLineMode()
+
+    def callback(self):
+        if (self.connected == True and len(commq) > 0):
+            #print 'sending command'
+            self._sendCommand(commq.pop(0))
 
     def dataReceived(self, data):
         print 'data received ' + data
         if (data == "init\n"):
             self.connected = True
+            return
+        data = json.loads(data)
+        self.ciq.append(data)
+        if data['type'] == 'register':
+            print 'register!'
+        elif data['type'] == 'authenticate':
+            #self.factory.ci.loginWindow.loginResponse(data)
+            print 'authenticate!'
+        elif data['type'] == 'change password':
+            print 'change password'
+
 
 
     def _sendCommand(self, object):
@@ -65,19 +86,18 @@ class Echo(LineReceiver):
 
 
 class EchoClientFactory(ClientFactory):
-    def __init__(self,  server_ip):
+    def __init__(self, ciq, commq,  server_ip):
         self.server_ip = server_ip
-        self.ci = None
-
-    def set_ci(self, ci):
-        self.ci = ci
+        self.ciq = ciq
+        self.commq = commq
+        self.echo = None
 
     def startedConnecting(self, connector):
         print 'Started to connect.'
 
     def buildProtocol(self, addr):
         print 'Connected.'
-        self.echo = Echo(self.server_ip)
+        self.echo = Echo(ciq=self.ciq, commq=self.commq, factory=self, server_ip=self.server_ip)
         return self.echo
 
     def clientConnectionLost(self, connector, reason):
@@ -90,8 +110,8 @@ class EchoClientFactory(ClientFactory):
 #KEVIN: 172.25.108.150
 #VENKAT: 172.27.108.88
 
-def client_interface(factory):
-    ci = clientInterface(factory)
+def client_interface(ciq, commq):
+    ci = clientInterface(ciq=ciq, commq=commq)
 
 parser = optparse.OptionParser()
 parser.add_option('--server_ip', action='store', type='string', dest='server_ip',
@@ -100,9 +120,11 @@ parser.add_option('--server_ip', action='store', type='string', dest='server_ip'
 if (options.server_ip == None):
     options.server_ip = 'localhost'
 
+ciq = []
+commq = []
 
-factory = EchoClientFactory(server_ip = options.server_ip,)
-thread.start_new_thread(client_interface, (factory,))
+factory = EchoClientFactory(ciq=ciq, commq=commq, server_ip = options.server_ip,)
+thread.start_new_thread(client_interface, (ciq, commq))
 
 
 

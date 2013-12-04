@@ -67,8 +67,9 @@ class FileTransferProtocol(basic.LineReceiver):
         if command in ['register', 'authenticate', 'change_password']:
             if command == 'register':
                 success = self.factory.register(data['username'], data['password'])
-                self.sendLine(json.dumps({'success': success}))
+                self.sendLine(json.dumps({'type': 'register', 'success': success}))
             elif command == 'authenticate':
+                print 'AUTHENTICATION RECEIVED'
                 success = self.factory.auth(data['username'], data['password'])
                 reason = ''
                 if not success:
@@ -76,7 +77,7 @@ class FileTransferProtocol(basic.LineReceiver):
                     reason = 'incorrect password'
                     if not user_exists:
                         reason = 'user does not exist'
-                self.sendLine(json.dumps({'success': success, 'reason': reason}))
+                self.sendLine(json.dumps({'type': 'authenticate', 'success': success, 'reason': reason}))
             elif command == 'change password':
                 success = self.factory.auth(data['username'], data['password'])
                 reason = ''
@@ -87,7 +88,7 @@ class FileTransferProtocol(basic.LineReceiver):
                         reason = 'user does not exist'
                 if success:
                     success = self.factory.updatePassword(self, data['username'], data['password'])
-                self.sendLine(json.dumps({'success': success, 'reason': reason}))
+                self.sendLine(json.dumps({'type': 'change password', 'success': success, 'reason': reason}))
             return
 
         # client daemon messages come in here
