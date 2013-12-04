@@ -79,6 +79,8 @@ class Echo(LineReceiver):
 
                 # When the transfer is finished, we go back to the line mode
                 self.setLineMode()
+            elif 'command' in files and files['command'] == 'done uploading':
+                print 'File successfully transferred!'
             if files['success'] == False:
                 print 'Authentication failed with username: ' + self.username + ' and password: ' + self.password
             elif "directories" in files.keys():

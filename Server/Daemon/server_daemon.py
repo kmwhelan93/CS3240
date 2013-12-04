@@ -200,6 +200,7 @@ class FileTransferProtocol(basic.LineReceiver):
 
             self.file_handler.close()
             self.file_handler = None
+            self.sendLine(json.dumps({'command': 'done uploading', 'success':True}))
         else:
             self.file_handler.write(data)
 
