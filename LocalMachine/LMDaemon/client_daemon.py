@@ -118,6 +118,8 @@ class Echo(LineReceiver):
         object["password"] = self.password
         sendObj = {"username": self.username, "password": self.password}
         command = object["command"]
+        print 'command to be sent: ' + json.dumps(object)
+        print 'ignore is' + json.dumps(self.ignore)
         if command == 'move' or command=='create' or command=='get' or command=="delete":
             if (command=='create' or command=="delete") and object['file'] in self.ignore:
                 self.ignore.remove(object['file'])

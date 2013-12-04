@@ -38,7 +38,7 @@ class SyncEventHandler(FileSystemEventHandler):
 
     def on_deleted(self, event):
         super(SyncEventHandler, self).on_deleted(event)
-        time.sleep(.5)
+        time.sleep(1)
         what = 'directory' if event.is_directory else 'file'
         #logging.info("Deleted %s: %s", what, event.src_path)
         if self.valid_path(event.src_path):

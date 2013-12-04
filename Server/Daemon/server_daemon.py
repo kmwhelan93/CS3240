@@ -73,8 +73,10 @@ class FileTransferProtocol(basic.LineReceiver):
         if command == 'move':
             print "Receiving move from " + data['src'] + " to " + data['dest']
             self.factory.db.recordTrans(data['username'], "move", 0, data['src'] + " to " + data['dest'])
-            if os.path.exists(os.path.join(self.factory.files_path, data["username"], data['src'])):
-                os.renames(os.path.join(self.factory.files_path, data["username"], data['src']), os.path.join(self.factory.files_path, data['username'], data['dest']))
+            src_path = os.path.join(self.factory.files_path, data["username"], self.clean_file_string(data['src']))
+            dest_path = os.path.join(self.factory.files_path, data["username"], self.clean_file_string(data['dest']))
+            if os.path.exists(src_path):
+                os.renames(src_path, dest_path)
             self.sendLine(json.dumps(retVal))
         elif command == 'register':
             print 'Receiving register for username ' + data['username']
@@ -88,7 +90,7 @@ class FileTransferProtocol(basic.LineReceiver):
         elif command == "delete":
             print "Receiving delete of " + data["what"] + " " + data['file']
             self.factory.db.recordTrans(data['username'], "delete", 0, data["what"] + " " + data['file'])
-            path = os.path.join(self.factory.files_path, data['username'], data["file"])
+            path = os.path.join(self.factory.files_path, self.clean_file_string(data['username']), self.clean_file_string(data["file"]))
             if (os.path.exists(path)):
                 if (data["what"] == "file"):
                     os.unlink(path)
