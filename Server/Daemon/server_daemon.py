@@ -188,11 +188,9 @@ class FileTransferProtocol(basic.LineReceiver):
         file_path = self.file_to_update
 
         display_message('Receiving file chunk (%d KB)' % (len(data)))
-        print file_path
 
         if not self.file_handler:
             self.file_handler = open(file_path, 'wb')
-        print data
         if '\r\n' in data:
             print 'end of file'
             # Last chunk
