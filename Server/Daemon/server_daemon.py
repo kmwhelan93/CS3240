@@ -64,7 +64,7 @@ class FileTransferProtocol(basic.LineReceiver):
 
         print line
         # client interface messages come in here
-        if command in ['register', 'authenticate', 'change_password']:
+        if command in ['register', 'authenticate', 'change password']:
             if command == 'register':
                 success = self.factory.register(data['username'], data['password'])
                 self.sendLine(json.dumps({'type': 'register', 'success': success}))
@@ -87,7 +87,9 @@ class FileTransferProtocol(basic.LineReceiver):
                     if not user_exists:
                         reason = 'user does not exist'
                 if success:
-                    success = self.factory.updatePassword(self, data['username'], data['new_password'])
+                    print 'here'
+                    success = self.factory.updatePassword(data['username'], data['new_password'])
+                print {'type': 'change password', 'success': success, 'reason': reason}
                 self.sendLine(json.dumps({'type': 'change password', 'success': success, 'reason': reason}))
             return
 
@@ -265,20 +267,11 @@ class FileTransferServerFactory(protocol.ServerFactory):
         return self.db.createUser(username, password)
 
     def userExists(self, userName):
-        self.cur.execute('SELECT * FROM user WHERE username=?',[userName])
-        result = self.cur.fetchall()
-        if(len(result) > 0):
-            return True
-        else:
-            return False
+        return self.db.userExists(userName)
 
     def updatePassword(self, userName, password):
-        if self.userExists(userName):
-            self.cur.execute("UPDATE user SET password=? WHERE username=?", [ hashlib.sha256(password).hexdigest(),userName])
-            self.db.commit()
-            return True
-        else:
-            return False
+        print "Pass upate called"
+        return self.db.updatePassword(userName, password)
 
 
 if __name__ == '__main__':
