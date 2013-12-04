@@ -60,7 +60,8 @@ class Echo(LineReceiver):
         password = self.password
         timestamps = get_timestamps(self.files_path)
         object = {"command": "get", "username": username, "password": password, "timestamps": timestamps}
-        self.q.put(object)
+        if (self.connected == True and self.factory.command_out == False and self.q.qsize() == 0):
+            self.q.put(object)
 
     def callback(self):
         #print 'callback'
