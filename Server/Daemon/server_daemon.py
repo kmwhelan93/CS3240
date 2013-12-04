@@ -79,7 +79,7 @@ class FileTransferProtocol(basic.LineReceiver):
                         reason = 'user does not exist'
                 self.sendLine(json.dumps({'type': 'authenticate', 'success': success, 'reason': reason}))
             elif command == 'change password':
-                success = self.factory.auth(data['username'], data['password'])
+                success = self.factory.auth(data['username'], data['old_password'])
                 reason = ''
                 if not success:
                     user_exists = self.factory.userExists(data['username'])
@@ -87,7 +87,7 @@ class FileTransferProtocol(basic.LineReceiver):
                     if not user_exists:
                         reason = 'user does not exist'
                 if success:
-                    success = self.factory.updatePassword(self, data['username'], data['password'])
+                    success = self.factory.updatePassword(self, data['username'], data['new_password'])
                 self.sendLine(json.dumps({'type': 'change password', 'success': success, 'reason': reason}))
             return
 
