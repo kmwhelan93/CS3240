@@ -10,11 +10,13 @@ from watchdog.events import FileSystemEventHandler
 class SyncEventHandler(FileSystemEventHandler):
     """Logs all the events captured."""
 
-    def __init__(self, q, path, ignore):
+    def __init__(self, q, path, ignore, f):
         self.timestamps = dict()
         self.base_path = path
         self.q = q
         self.ignore = ignore
+        self.f = f
+        print self.f.file_syncing
 
     def on_moved(self, event):
         super(SyncEventHandler, self).on_moved(event)
@@ -25,7 +27,7 @@ class SyncEventHandler(FileSystemEventHandler):
         if (self.valid_path(event.src_path) and self.valid_path(event.dest_path)):
             self.ignore.append(self.clean_file_string(self.get_local_path(event.src_path)))
             object = {"command":"move", "src": self.get_local_path(event.src_path), "dest": self.get_local_path(event.dest_path) }
-            self.q.put(object)
+            self.q.append(object)
 
     def on_created(self, event):
         super(SyncEventHandler, self).on_created(event)
@@ -34,7 +36,7 @@ class SyncEventHandler(FileSystemEventHandler):
         #logging.info("Created %s: %s", what, event.src_path)
         if (self.valid_path(event.src_path) and what=='directory'):
             object = {"command": "create", "file": self.get_local_path(event.src_path), "what": what}
-            self.q.put(object)
+            self.q.append(object)
 
     def on_deleted(self, event):
         super(SyncEventHandler, self).on_deleted(event)
@@ -43,7 +45,7 @@ class SyncEventHandler(FileSystemEventHandler):
         #logging.info("Deleted %s: %s", what, event.src_path)
         if self.valid_path(event.src_path):
             object = {"command": "delete", "file": self.get_local_path(event.src_path), "what": what}
-            self.q.put(object)
+            self.q.append(object)
 
     def on_modified(self, event):
         super(SyncEventHandler, self).on_modified(event)
@@ -55,13 +57,15 @@ class SyncEventHandler(FileSystemEventHandler):
     def create_object(self, command, path):
         if (self.valid_path(path)):
             o = {"command" : command, "file" : path}
-            self.q.put(o)
+            self.q.append(o)
         #o = {"command": "put", "files": self.timestamps.items()}
 
     def valid_path(self, path):
         if path == None:
             return False
         if path.find(".goutputstream") != -1:
+            return False
+        if path == self.f.file_syncing:
             return False
         return True
 

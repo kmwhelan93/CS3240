@@ -60,15 +60,20 @@ class Echo(LineReceiver):
         password = self.password
         timestamps = get_timestamps(self.files_path)
         object = {"command": "get", "username": username, "password": password, "timestamps": timestamps}
-        if (self.connected == True and self.factory.command_out == False and self.q.qsize() == 0):
-            self.q.put(object)
+        if (self.connected == True and self.factory.command_out == False and len(q) == 0):
+            self.q.append(object)
 
     def callback(self):
         #print 'callback'
         print 'COMMAND OUT ', self.factory.command_out
-        if (self.connected == True and self.factory.command_out == False and self.q.qsize() > 0):
+        if (self.connected == True and self.factory.command_out == False and len(q) > 0):
             #print 'sending command'
-            self._sendCommand(self.q.get())
+            first = q.pop(0)
+            if (first['command'] == 'get' and len(q) > 0):
+                first = q.pop(0)
+            print q
+            self._sendCommand(first)
+
 
 
     def rawDataReceived(self, data):
@@ -78,7 +83,7 @@ class Echo(LineReceiver):
             self.file_handler = None
             return
         file_path = self.file_to_update
-        print self.factory.command_out
+        self.factory.file_syncing = file_path
         if not self.file_handler:
             self.file_handler = open(file_path, 'wb')
         if data.endswith('\r\n'):
@@ -90,6 +95,7 @@ class Echo(LineReceiver):
             self.file_handler.close()
             self.file_handler = None
             self.factory.command_out = False
+            self.factory.file_syncing = None
         else:
             self.file_handler.write(data)
     def lineReceived(self, data):
@@ -138,7 +144,7 @@ class Echo(LineReceiver):
                 # TODO THIS NEEDS TO CHANGE
                 for file in files['files']:
                     path = os.path.join(self.files_path, file)
-                    q.put({'command': 'get_file', 'rel_path': file})
+                    q.insert(0, {'command': 'get_file', 'rel_path': file})
                 self.factory.command_out = False
             elif files['success'] == True:
                 self.factory.command_out = False
@@ -162,6 +168,7 @@ class Echo(LineReceiver):
             self.file_to_update = os.path.join(self.files_path, self.clean_file_string(object['rel_path']))
             self.ignore.append(self.clean_file_string(object['rel_path']))
             self.setRawMode()
+            self.factory.file_syncing = self.file_to_update
             self.sendLine(json.dumps(object))
         elif command == 'put':
             if self.clean_file_string(object['file'].replace(self.files_path, "")) in self.ignore:
@@ -210,6 +217,7 @@ class EchoClientFactory(ClientFactory):
         self.password = password
         self.command_out = False
         self.connection = None
+        self.file_syncing = None
 
     def set_connection(self, connection):
         self.connection = connection
@@ -260,11 +268,11 @@ username = options.user
 password = options.password
 files_path = options.path
 
-def watchDog(base_path, q, ignore):
+def watchDog(base_path, q, ignore, f):
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
-    event_handler = SyncEventHandler(q, base_path, ignore)
+    event_handler = SyncEventHandler(q, base_path, ignore, f)
     observer = Observer()
     observer.schedule(event_handler, base_path, recursive=True)
     observer.start()
@@ -276,14 +284,14 @@ def watchDog(base_path, q, ignore):
     observer.join()
 
 
-q = Queue()
+q = []
 ignore = []
 
+f = factory = EchoClientFactory(q=q, files_path=files_path, ignore=ignore, server_ip=server_ip, username=username, password=password)
 
-thread.start_new_thread(watchDog, (files_path, q, ignore))
+thread.start_new_thread(watchDog, (files_path, q, ignore, f))
 print 'username: ' + username + " password: " + password + " files_path " + files_path
 
-factory = EchoClientFactory(q=q, files_path=files_path, ignore=ignore, server_ip=server_ip, username=username, password=password)
 #reactor.connectTCP("localhost", 1234, factory)
 connection = reactor.connectTCP(server_ip, 1234, factory)
 factory.connection = connection
