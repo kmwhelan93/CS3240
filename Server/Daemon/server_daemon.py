@@ -133,9 +133,9 @@ class FileTransferProtocol(basic.LineReceiver):
             if os.path.exists(file_path):
                 self.setRawMode()
                 for bytes in read_bytes_from_file(file_path):
-                    self.sendLine(bytes)
+                    self.transport.write(bytes)
 
-                self.sendLine('\r\n')
+                self.transport.write('\r\n')
 
                 # When the transfer is finished, we go back to the line mode
                 self.setLineMode()
@@ -207,7 +207,7 @@ class FileTransferProtocol(basic.LineReceiver):
 
         if not self.file_handler:
             self.file_handler = open(file_path, 'wb')
-        if '\r\n' in data:
+        if data.endswith('\r\n'):
             print 'end of file'
             # Last chunk
             data = data[:-2]

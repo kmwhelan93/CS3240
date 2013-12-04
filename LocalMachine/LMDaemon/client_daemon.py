@@ -45,6 +45,10 @@ class Echo(LineReceiver):
         self.file_data = ()
 
     def connectionMade(self):
+        #self.factory2 = EchoClientFactory(self.q, self.files_path, self.ignore, self.server_ip, self.username, self.password)
+        #self.connection = reactor.connectTCP(self.server_ip, self.server_port, self.factory2)
+        #self.factory.deferred.addCallback(self._display_response)
+
         self.connected = False
         self.task_id = task.LoopingCall(self.callback)
         self.task_id.start(.5)
@@ -76,7 +80,7 @@ class Echo(LineReceiver):
         print self.factory.command_out
         if not self.file_handler:
             self.file_handler = open(file_path, 'wb')
-        if '\r\n' in data:
+        if data.endswith('\r\n'):
             # Last chunk
             data = data[:-2]
             self.file_handler.write(data)
@@ -97,9 +101,9 @@ class Echo(LineReceiver):
             if 'command' in files and files['command'] == 'put':
                 self.setRawMode()
                 for bytes in read_bytes_from_file(files['local_file_path']):
-                    self.sendLine(bytes)
+                    self.factory.connection.transport.write(bytes)
 
-                self.sendLine('\r\n')
+                self.factory.connection.transport.write('\r\n')
 
                 # When the transfer is finished, we go back to the line mode
                 self.setLineMode()
@@ -204,6 +208,10 @@ class EchoClientFactory(ClientFactory):
         self.username = username
         self.password = password
         self.command_out = False
+        self.connection = None
+
+    def set_connection(self, connection):
+        self.connection = connection
 
     def startedConnecting(self, connector):
         print 'Started to connect.'
@@ -276,5 +284,6 @@ print 'username: ' + username + " password: " + password + " files_path " + file
 
 factory = EchoClientFactory(q=q, files_path=files_path, ignore=ignore, server_ip=server_ip, username=username, password=password)
 #reactor.connectTCP("localhost", 1234, factory)
-reactor.connectTCP(server_ip, 1234, factory)
+connection = reactor.connectTCP(server_ip, 1234, factory)
+factory.connection = connection
 reactor.run()
