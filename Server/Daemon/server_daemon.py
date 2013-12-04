@@ -23,6 +23,8 @@ import shutil
 import optparse
 from common import get_timestamps
 
+
+import hashlib
 import json
 import Server.DbOps
 from twisted.internet import reactor, protocol
@@ -62,8 +64,33 @@ class FileTransferProtocol(basic.LineReceiver):
 
         print line
         # client interface messages come in here
-        
-        # authenticate
+        if command in ['register', 'authenticate', 'change_password']:
+            if command == 'register':
+                success = self.factory.register(data['username'], data['password'])
+                self.sendLine(json.dumps({'success': success}))
+            elif command == 'authenticate':
+                success = self.factory.auth(data['username'], data['password'])
+                reason = ''
+                if not success:
+                    user_exists = self.factory.userExists(data['username'])
+                    reason = 'incorrect password'
+                    if not user_exists:
+                        reason = 'user does not exist'
+                self.sendLine(json.dumps({'success': success, 'reason': reason}))
+            elif command == 'change password':
+                success = self.factory.auth(data['username'], data['password'])
+                reason = ''
+                if not success:
+                    user_exists = self.factory.userExists(data['username'])
+                    reason = 'incorrect password'
+                    if not user_exists:
+                        reason = 'user does not exist'
+                if success:
+                    success = self.factory.updatePassword(self, data['username'], data['password'])
+                self.sendLine(json.dumps({'success': success, 'reason': reason}))
+            return
+
+        # client daemon messages come in here
         if (not self.factory.auth(data['username'], data['password'])) and not command in self.c_interface_commands:
             retVal['success'] = False
             self.sendLine(json.dumps(retVal))
@@ -235,6 +262,22 @@ class FileTransferServerFactory(protocol.ServerFactory):
 
     def register(self, username, password):
         return self.db.createUser(username, password)
+
+    def userExists(self, userName):
+        self.cur.execute('SELECT * FROM user WHERE username=?',[userName])
+        result = self.cur.fetchall()
+        if(len(result) > 0):
+            return True
+        else:
+            return False
+
+    def updatePassword(self, userName, password):
+        if self.userExists(userName):
+            self.cur.execute("UPDATE user SET password=? WHERE username=?", [ hashlib.sha256(password).hexdigest(),userName])
+            self.db.commit()
+            return True
+        else:
+            return False
 
 
 if __name__ == '__main__':
