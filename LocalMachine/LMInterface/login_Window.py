@@ -75,9 +75,11 @@ class loginWindow:
             self.setUpStatus.config(fg="blue")
         else:
             self.lock = True
+            #kevin
             #Create and Login object here
 
     def loginResponse(self, response):
+        #kevin
         if response["status"] == "NOT_EXIST":
             self.loginText.set("No record of this username on our servers. Choose your OneDir username, password, and directory.")
             self.loginStatus.config(fg="blue")
@@ -113,12 +115,11 @@ class loginWindow:
 
         if len(password) > 4 and self.UI.prefOps.validDirectoryPath(directory):
             self.lock = True
+            #kevin
             #CREATE AND SEND OBJECT
 
     def signupResponse(self, response):
-
-        #RECEIVE OBJECT CAN BE BOOLEAN
-
+        #kevin
         if(response):
             self.UI.prefOps.createUser(self.username, self.password, self.directory)
             self.setUpText.set("You have successfully set up you OneDir directory on this machine.")

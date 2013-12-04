@@ -6,6 +6,8 @@ class passwordWindow:
 
     def __init__(self, clientInterface):
 
+        self.lock = False
+
         self.UI = clientInterface
         self.UI.changePasswordButton.config(state=DISABLED)
 
@@ -42,6 +44,9 @@ class passwordWindow:
         self.passwordButton.grid(row=5, column=2)
         self.UI.center(self.pwin)
 
+    def validateEdit(self):
+        return not self.lock
+
     def changePassword(self, op, np1, np2):
 
         if not self.UI.prefOps.authenticateUser(self.UI.userRow[0], op):
@@ -49,8 +54,8 @@ class passwordWindow:
             self.passwordStatus.config(fg="red")
             return
 
-        elif len(np1) < 4:
-            self.statusText.set("Your new password must be at least 4 characters long. Please choose a longer password.")
+        elif len(np1) < 5:
+            self.statusText.set("Your new password must be at least 5 characters long. Please choose a longer password.")
             self.passwordStatus.config(fg="red")
             return
 
@@ -59,12 +64,24 @@ class passwordWindow:
             self.passwordStatus.config(fg="red")
             return
 
-        elif (len(np1)+len(np2) >= 8) & (np1 == np2):
-            self.UI.prefOps.updatePassword(self.UI.userRow[0], np1)
-            self.UI.passwordLength = len(np1)
+        elif (len(np1)+len(np2) >= 10) & (np1 == np2):
+            self.user = self.UI.userRow[0]
+            self.np = np1
+            self.lock = True
+            #kevin
+
+    def changePasswordResponse(self, response):
+        #kevin
+        if response:
+            self.UI.prefOps.updatePassword(self.user, self.np)
+            self.UI.passwordLength = len(self.np)
             self.UI.passwordVar.set(self.UI.blankPassword(self.UI.passwordLength))
             self.closePasswordWindow()
             return
+        else:
+            self.statusText.set("There was a problem changing your password on the server.")
+            self.passwordStatus.config(fg="red")
+        self.lock = False
 
     def closePasswordWindow(self):
         self.UI.changePasswordButton.config(state=NORMAL)
