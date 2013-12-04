@@ -149,9 +149,6 @@ class FileTransferProtocol(basic.LineReceiver):
             self.sendLine(json.dumps(retVal))
         elif command == 'quit':
             self.transport.loseConnection()
-        ### JUSTIN ADD... REGISTER FUNCTION LOOKING FOR data['username'] and data['password']
-        elif command == 'register':
-            self.factory.db.register(data['username'], data['password'])
         else:
             self.sendLine(json.dumps(retVal))
     def clean_file_string(self, string):
