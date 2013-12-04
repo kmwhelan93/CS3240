@@ -71,7 +71,7 @@ class Echo(LineReceiver):
         else:
             files = json.loads(data.strip())
             if files['success'] == False:
-                print 'Authentication failed with username and password get them here'
+                print 'Authentication failed with username: ' + self.username + ' and password: ' + self.password
             elif "directories" in files.keys():
             # get directories first
                 files['directories'].sort()
