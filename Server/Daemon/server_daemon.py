@@ -40,6 +40,8 @@ class FileTransferProtocol(basic.LineReceiver):
         self.file_data = ()
         self.sendLine("init")
 
+        self.file_to_update = ''
+
         self.c_interface_commands = ['authenticate', 'register']
 
         display_message(
@@ -57,6 +59,7 @@ class FileTransferProtocol(basic.LineReceiver):
         data = json.loads(line)
         command = data["command"]
         retVal = {"done": True, 'success': True}
+
         print line
         # authenticate
         if (not self.factory.auth(data['username'], data['password'])) and not command in self.c_interface_commands:
@@ -124,7 +127,7 @@ class FileTransferProtocol(basic.LineReceiver):
             self.sendLine(json.dumps(retVal))
         elif command == 'put':
             try:
-                filename = self.clean_file_string(data["local"])
+                filename = self.clean_file_string(data["relative_path"])
             except IndexError:
                 self.transport.write('Missing filename or file MD5 hash\n')
                 self.transport.write('ENDMSG\n')
@@ -134,10 +137,11 @@ class FileTransferProtocol(basic.LineReceiver):
             # Switch to the raw mode (for receiving binary data)
             self.factory.db.recordTrans(data['username'], "put", 0, file_path)
             print 'Receiving file: %s' % (filename)
-            f = open(file_path, 'w')
-            f.write(data['content'])
-            f.close()
+            retVal['command'] = 'put'
+            retVal['local_file_path'] = data['local_file_path']
             self.sendLine(json.dumps(retVal))
+            self.file_to_update = file_path
+            self.setRawMode()
 
         elif command == 'help':
             self.sendLine(json.dumps(retVal))
@@ -179,6 +183,27 @@ class FileTransferProtocol(basic.LineReceiver):
         input = input.split(' ')
 
         return input
+
+    def rawDataReceived(self, data):
+        file_path = self.file_to_update
+
+        display_message('Receiving file chunk (%d KB)' % (len(data)))
+        print file_path
+
+        if not self.file_handler:
+            self.file_handler = open(file_path, 'wb')
+        print data
+        if '\r\n' in data:
+            print 'end of file'
+            # Last chunk
+            data = data[:-2]
+            self.file_handler.write(data)
+            self.setLineMode()
+
+            self.file_handler.close()
+            self.file_handler = None
+        else:
+            self.file_handler.write(data)
 
 
 class FileTransferServerFactory(protocol.ServerFactory):

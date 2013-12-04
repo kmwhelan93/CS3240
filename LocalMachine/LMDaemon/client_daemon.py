@@ -44,11 +44,10 @@ class Echo(LineReceiver):
         self.command_out = False
 
     def connectionMade(self):
-
         self.connected = False
         self.task_id = task.LoopingCall(self.callback)
         self.task_id.start(.5)
-        #self.setLineMode()
+        self.setLineMode()
         #task.LoopingCall(self.get_files).start(3)
 
     def get_files(self):
@@ -70,6 +69,16 @@ class Echo(LineReceiver):
             self.connected = True
         else:
             files = json.loads(data.strip())
+            if 'command' in files and files['command'] == 'put':
+                print 'confirmation received. sending file'
+                self.setRawMode()
+                for bytes in read_bytes_from_file(files['local_file_path']):
+                    self.sendLine(bytes)
+
+                self.sendLine('\r\n')
+
+                # When the transfer is finished, we go back to the line mode
+                self.setLineMode()
             if files['success'] == False:
                 print 'Authentication failed with username: ' + self.username + ' and password: ' + self.password
             elif "directories" in files.keys():
@@ -134,11 +143,10 @@ class Echo(LineReceiver):
             file_size = os.path.getsize(file_path) / 1024
 
             print 'Uploading file: %s (%d KB)' % (filename, file_size)
-            f = open(file_path, 'r')
-            object = {"command": "put", "local": filename, "content": f.read()}
+            object = {"command": "put", "relative_path": filename, 'local_file_path': file_path}
             sendObj = dict(object.items() + sendObj.items())
             self.sendLine(json.dumps(sendObj))
-            f.close()
+
     def _display_message(self, message):
         print message
 
