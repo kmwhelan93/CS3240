@@ -12,6 +12,7 @@ from PIL import Image, ImageTk
 
 class clientInterface:
     def __init__(self, ciq, commq):
+        self.passWindow = None
         self.ciq = ciq
         self.commq = commq
         self.root = Tk()
@@ -31,12 +32,15 @@ class clientInterface:
             elif object['type'] == 'register':
                 self.loginWindow.signupResponse(object)
             elif object['type'] == 'change password':
-                # justin call changePasswordResponse on passwordWindow
-                print 'change password!'
+                if self.passWindow is not None:
+                    self.passWindow.changePasswordResponse(object)
+                    print 'change password!'
         self.root.after(500, self.callback)
 
     def initUI(self, username, password):
-        self.prefOps.checkStartDaemon(username, password)
+        self.username = username
+        self.password = password
+        self.prefOps.checkStartDaemon(self.username, self.password)
         self.root.title("OneDir Local User Preferences Interface")
         self.root.config(padx=10, pady=10)
         self.userRow = self.prefOps.getUserRow(username)
@@ -71,10 +75,10 @@ class clientInterface:
 
         self.autosyncCheck = Checkbutton(self.root, text="Select to enable Autosync",
                                          variable=self.autosyncVar, padx=5, pady=5,
-                                         command=lambda: self.prefOps.updateAutoSyncSetting(self.userRow[0], password))
+                                         command=lambda: self.prefOps.updateAutoSyncSetting(self.username, self.password))
         self.autosyncCheck.grid(row=3, column=1, columnspan=2)
 
-        self.changePasswordButton = Button(self.root, text="Change Password", command=lambda: passwordWindow(self))
+        self.changePasswordButton = Button(self.root, text="Change Password", command=self.makePassWindow)
         self.changePasswordButton.grid(row=4, column=0)
 
         self.changeDirectoryButton = Button(self.root, text="Change Directory", command=lambda: directoryWindow(self))
@@ -84,6 +88,10 @@ class clientInterface:
         self.exitButton.grid(row=4, column=2)
 
         self.center(self.root)
+
+    def makePassWindow(self):
+        if self.passWindow is None:
+            self.passWindow = passwordWindow(self)
 
     def blankPassword(self, length):
         blank = ""

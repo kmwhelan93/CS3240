@@ -23,17 +23,17 @@ class passwordWindow:
 
         self.oldPassword = Label(self.pwin, text="Old Password:", padx=5, pady=5)
         self.oldPassword.grid(row=2, columnspan=1,)
-        self.oldPasswordEntry = Entry(self.pwin, show="*", width=30)
+        self.oldPasswordEntry = Entry(self.pwin, show="*", width=30, validate=ALL, validatecommand=self.validateEdit)
         self.oldPasswordEntry.grid(row=2, column=1, columnspan=2)
 
         self.newPassword1 = Label(self.pwin, text="New Password:", padx=5, pady=5)
         self.newPassword1.grid(row=3, columnspan=1,)
-        self.newPassword1Entry = Entry(self.pwin, show="*", width=30)
+        self.newPassword1Entry = Entry(self.pwin, show="*", width=30, validate=ALL, validatecommand=self.validateEdit)
         self.newPassword1Entry.grid(row=3, column=1, columnspan=2)
 
         self.newPassword2 = Label(self.pwin, text="Retype Password:", padx=5, pady=5)
         self.newPassword2.grid(row=4, columnspan=1,)
-        self.newPassword2Entry = Entry(self.pwin, show="*", width=30)
+        self.newPassword2Entry = Entry(self.pwin, show="*", width=30, validate=ALL, validatecommand=self.validateEdit)
         self.newPassword2Entry.grid(row=4, column=1, columnspan=2)
 
         self.cancelButton = Button(self.pwin, text="Cancel", command=self.closePasswordWindow)
@@ -76,7 +76,8 @@ class passwordWindow:
 
     def changePasswordResponse(self, response):
         #kevin
-        if response:
+        if response['success'] == True:
+            self.UI.password = self.np
             self.UI.prefOps.updatePassword(self.user, self.np)
             self.UI.passwordLength = len(self.np)
             self.UI.passwordVar.set(self.UI.blankPassword(self.UI.passwordLength))
