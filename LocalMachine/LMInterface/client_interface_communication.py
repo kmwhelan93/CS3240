@@ -28,6 +28,17 @@ import optparse
 from client_Interface import clientInterface
 
 
+'''
+SEND COMMANDS WITH THE FOLLOWING FORMATS:
+{'command':'register', 'username':'<username>', 'password':'<password>'}
+    returns: {'success':<boolean>} indicating successful creation -- if false, user already exists
+
+{'command': 'authenticate', 'username':'<username>', 'password':'<password>'}
+    returns {'success':<boolean>, 'reason':<reason>} -- <reason> is one of ['user does not exist', 'incorrect password']
+
+{'command': 'change password', 'username':'<username>', 'old_password':'<password>', 'new_password':'<new_password>'}
+    returns {'success':<boolean>, 'reason':<reason>} -- <reason> is one of ['user does not exist', 'incorrect password']
+'''
 class Echo(LineReceiver):
     delimiter = '\n'
 
