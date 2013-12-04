@@ -23,7 +23,7 @@ class SyncEventHandler(FileSystemEventHandler):
         #logging.info("Moved %s: from %s to %s", what, event.src_path,
         #             event.dest_path)
         if (self.valid_path(event.src_path) and self.valid_path(event.dest_path)):
-            self.ignore.append(self.get_local_path(event.src_path))
+            self.ignore.append(self.clean_file_string(self.get_local_path(event.src_path)))
             object = {"command":"move", "src": self.get_local_path(event.src_path), "dest": self.get_local_path(event.dest_path) }
             self.q.put(object)
 
@@ -64,6 +64,12 @@ class SyncEventHandler(FileSystemEventHandler):
         if path.find(".goutputstream") != -1:
             return False
         return True
+
+    def clean_file_string(self, string):
+        if (len(string) > 0):
+            if string[0] == '/':
+                return string[1:]
+        return string
 
     def get_local_path(self, full_path):
         return full_path.replace(self.base_path, '')

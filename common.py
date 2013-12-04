@@ -11,6 +11,7 @@ COMMANDS = {
     'move': ('move', 'Moves a file on server'),
     'create': ('create', 'Creates a file on server'),
     'delete': ('delete', 'Deletes a file on server'),
+    'get_file': ('get_file', 'for getting individual files')
 }
 
 
