@@ -158,7 +158,7 @@ class EchoClientFactory(ClientFactory):
 
     def buildProtocol(self, addr):
         print 'Connected.'
-        self.echo = Echo(self.q, self.ignore, self.username, self.password, self.files_path, self.server_ip)
+        self.echo = Echo(q=self.q, ignore=self.ignore, username=self.username, password=self.password, files_path=self.files_path, server_ip=self.server_ip)
         return self.echo
 
     def clientConnectionLost(self, connector, reason):
@@ -220,9 +220,9 @@ ignore = []
 
 
 thread.start_new_thread(watchDog, (files_path, q, ignore))
+print 'username: ' + username + " password: " + password + " files_path " + files_path
 
-
-factory = EchoClientFactory(q, files_path, ignore, server_ip, username, password)
+factory = EchoClientFactory(q=q, files_path=files_path, ignore=ignore, server_ip=server_ip, username=username, password=password)
 #reactor.connectTCP("localhost", 1234, factory)
 reactor.connectTCP(server_ip, 1234, factory)
 reactor.run()
