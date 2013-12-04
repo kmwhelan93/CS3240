@@ -18,7 +18,6 @@ class preferenceOperations:
         self.con = None
         self.con = sqlite3.connect('localPreferences.db', isolation_level=None)
         self.cur = self.con.cursor()
-        self.hash256 = hashlib.sha256()
         self.setUpTable()
 
     def setUpTable(self):
@@ -38,7 +37,7 @@ class preferenceOperations:
 
     def createUser(self, username, password, directory):
         if not self.userExistsLocally(username):
-            digest = hashlib.sha256(password).hexdigest()
+            digest = password
             self.cur.execute("INSERT INTO Preferences VALUES(?,?,?,?)",
                 [username, digest,  1, directory])
             self.con.commit()
@@ -50,7 +49,7 @@ class preferenceOperations:
 
         self.cur.execute("SELECT * FROM Preferences WHERE Username =:Username", {"Username": username})
         userData = self.cur.fetchone()
-        digest = hashlib.sha256(password).hexdigest()
+        digest = password
 
         if userData[1] == digest:
             print "The username and password match."
@@ -104,7 +103,7 @@ class preferenceOperations:
     def updatePassword(self, username, password):
 
         if self.userExistsLocally(username):
-            digest = hashlib.sha256(password).hexdigest()
+            digest = password
             self.cur.execute("UPDATE Preferences SET password=? WHERE username=?", [digest,username])
             self.con.commit()
             print "Password has been updated."

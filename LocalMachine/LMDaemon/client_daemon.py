@@ -24,7 +24,7 @@ from common import COMMANDS, display_message, validate_file_md5_hash, get_file_m
 import os
 import shutil
 import optparse
-
+from LocalMachine.preferences_Operations import preferenceOperations
 
 class Echo(LineReceiver):
     delimiter = '\n'
@@ -209,6 +209,7 @@ class Echo(LineReceiver):
 
 class EchoClientFactory(ClientFactory):
     def __init__(self, q, files_path, ignore, server_ip, username, password):
+        self.pref = preferenceOperations()
         self.q = q
         self.files_path = files_path
         self.ignore = ignore
@@ -218,6 +219,17 @@ class EchoClientFactory(ClientFactory):
         self.command_out = False
         self.connection = None
         self.file_syncing = None
+        print self.get_password()
+        print self.get_directory()
+
+    def get_password(self):
+        row = self.pref.getUserRow(self.username)
+        self.password = row[1]
+        return row[1]
+
+    def get_directory(self):
+        row = self.pref.getUserRow(self.username)
+        return row[3]
 
     def set_connection(self, connection):
         self.connection = connection
