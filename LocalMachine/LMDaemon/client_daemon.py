@@ -21,10 +21,13 @@ from get_modification import SyncEventHandler
 from watchdog.observers import Observer
 from common import COMMANDS, display_message, validate_file_md5_hash, get_file_md5_hash, read_bytes_from_file, clean_and_split_input
 
+from crypt import AESCipher
+
 import os
 import shutil
 import optparse
 from LocalMachine.preferences_Operations import preferenceOperations
+from Crypto import Random
 
 class Echo(LineReceiver):
     delimiter = '\n'
@@ -40,7 +43,6 @@ class Echo(LineReceiver):
         self.ignore = ignore
         self.file_to_update = None
         self.factory = factory
-
         self.file_handler = None
         self.file_data = ()
 
@@ -87,10 +89,12 @@ class Echo(LineReceiver):
         self.factory.file_syncing = file_path
         if not self.file_handler:
             self.file_handler = open(file_path, 'wb')
+
+        encrypt_decrypt = AESCipher(self.password)
         if data.endswith('\r\n'):
             # Last chunk
             data = data[:-2]
-            self.file_handler.write(data)
+            self.file_handler.write(encrypt_decrypt.decrypt(data))
             self.setLineMode()
 
             self.file_handler.close()
@@ -98,7 +102,7 @@ class Echo(LineReceiver):
             self.factory.command_out = False
             self.factory.file_syncing = None
         else:
-            self.file_handler.write(data)
+            self.file_handler.write(encrypt_decrypt.decrypt((data)))
     def lineReceived(self, data):
         self.files_path = self.factory.get_directory()
         print 'data received ' + data
@@ -110,8 +114,9 @@ class Echo(LineReceiver):
             files = json.loads(data.strip())
             if 'command' in files and files['command'] == 'put':
                 self.setRawMode()
+                encrypt_decrypt = AESCipher(self.password)
                 for bytes in read_bytes_from_file(files['local_file_path']):
-                    self.factory.connection.transport.write(bytes)
+                    self.factory.connection.transport.write(encrypt_decrypt.encrypt(bytes))
 
                 self.factory.connection.transport.write('\r\n')
 
