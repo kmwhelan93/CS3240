@@ -57,7 +57,6 @@ class preferenceOperations:
         else:
             print userData[0]
             print userData[1]
-            print self.hash256.hexdigest()
             print "The username and password don't match."
             return False
 

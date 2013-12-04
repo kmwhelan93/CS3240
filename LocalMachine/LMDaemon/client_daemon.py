@@ -68,6 +68,7 @@ class Echo(LineReceiver):
         print 'COMMAND OUT ', self.factory.command_out
         if (self.connected == True and self.factory.command_out == False and len(q) > 0):
             #print 'sending command'
+            self.files_path = self.factory.get_directory()
             first = q.pop(0)
             if (first['command'] == 'get' and len(q) > 0):
                 first = q.pop(0)
@@ -99,9 +100,10 @@ class Echo(LineReceiver):
         else:
             self.file_handler.write(data)
     def lineReceived(self, data):
+        self.files_path = self.factory.get_directory()
         print 'data received ' + data
         print data
-        self.factory.get_directory()
+        print self.factory.get_directory()
         if (data == "init"):
             self.connected = True
         else:
@@ -154,7 +156,8 @@ class Echo(LineReceiver):
         self.factory.command_out = True
         object["username"] = self.username
         object["password"] = self.factory.get_password()
-        self.factory.get_directory()
+        self.password = self.factory.get_password()
+        self.files_path = self.factory.get_directory()
         sendObj = {"username": self.username, "password": self.password}
         command = object["command"]
         print 'command to be sent: ' + json.dumps(object)
