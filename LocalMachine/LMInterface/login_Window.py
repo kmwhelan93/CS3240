@@ -86,6 +86,7 @@ class loginWindow:
         if response['success'] == True:
             if not self.UI.prefOps.userExistsLocally(self.username):
                 self.UI.prefOps.createUser(self.username, self.password, self.directory)
+            self.UI.prefOps.updatePassword(self.username, self.password)
             self.UI.passwordLength = len(self.password)
             self.UI.initUI(self.username, self.password)
             self.closeWindow()
