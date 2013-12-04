@@ -10,7 +10,7 @@ from PIL import Image, ImageTk
 
 
 class clientInterface:
-    def __init__(self, q, ciq):
+    def __init__(self, factory):
         self.root = Tk()
         self.prefOps = preferenceOperations()
         self.root.withdraw()
@@ -19,8 +19,7 @@ class clientInterface:
         self.userRow = None
         self.passwordLength = 0
 
-        self.q = q
-        self.ciq = ciq
+        self.factory = factory
 
     def initUI(self, username, password):
         self.prefOps.checkStartDaemon(username, password)

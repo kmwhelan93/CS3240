@@ -61,6 +61,8 @@ class FileTransferProtocol(basic.LineReceiver):
         retVal = {"done": True, 'success': True}
 
         print line
+        # client interface messages come in here
+        
         # authenticate
         if (not self.factory.auth(data['username'], data['password'])) and not command in self.c_interface_commands:
             retVal['success'] = False
