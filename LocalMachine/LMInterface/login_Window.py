@@ -82,6 +82,7 @@ class loginWindow:
 
     def loginResponse(self, response):
         #kevin
+        print response
         if response['success'] == True:
             if not self.UI.prefOps.userExistsLocally(self.username):
                 self.UI.prefOps.createUser(self.username, self.password, self.directory)
@@ -123,7 +124,7 @@ class loginWindow:
 
     def signupResponse(self, response):
         #kevin
-        if(response):
+        if response['success'] == True:
             self.UI.prefOps.createUser(self.username, self.password, self.directory)
             self.setUpText.set("You have successfully set up you OneDir directory on this machine.")
             self.setUpStatus.config(fg="green")
