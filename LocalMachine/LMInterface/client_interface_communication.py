@@ -100,11 +100,11 @@ class EchoClientFactory(ClientFactory):
         print 'Connection failed. Reason:', reason
 
 
-#KEVIN: 172.25.108.150
-#VENKAT: 172.27.108.88
+#KEVIN: 172.25.43.170
+#VENKAT: 172.27.42.108
 
-def client_interface(ciq, commq):
-    ci = clientInterface(ciq=ciq, commq=commq)
+def client_interface(ciq, commq, server_ip):
+    ci = clientInterface(ciq=ciq, commq=commq, server_ip=server_ip)
 
 parser = optparse.OptionParser()
 parser.add_option('--server_ip', action='store', type='string', dest='server_ip',
@@ -117,7 +117,7 @@ ciq = []
 commq = []
 
 factory = EchoClientFactory(ciq=ciq, commq=commq, server_ip = options.server_ip,)
-thread.start_new_thread(client_interface, (ciq, commq))
+thread.start_new_thread(client_interface, (ciq, commq, options.server_ip))
 
 
 

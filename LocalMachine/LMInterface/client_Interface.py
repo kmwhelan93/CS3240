@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 
 
 class clientInterface:
-    def __init__(self, ciq, commq):
+    def __init__(self, ciq, commq, server_ip):
         self.passWindow = None
         self.ciq = ciq
         self.commq = commq
@@ -23,6 +23,7 @@ class clientInterface:
         self.root.mainloop()
         self.userRow = None
         self.passwordLength = 0
+        self.server_ip
 
     def callback(self):
         if (len(self.ciq) > 0):
