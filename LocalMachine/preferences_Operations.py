@@ -153,11 +153,8 @@ class preferenceOperations:
     def validDirectoryPath(self, directory):
 
         if not os.path.isdir(directory):
-            print "Directory path is invalid."
-            return False
-        else:
-            print "Directory path is valid."
-            return True
+            os.mkdir(directory)
+        return True
 
     def checkStartDaemon(self, username, password, server_ip):
         if self.getAutoSyncSetting(username):
