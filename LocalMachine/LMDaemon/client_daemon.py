@@ -109,6 +109,10 @@ class Echo(LineReceiver):
         else:
             files = json.loads(data.strip())
             if 'command' in files and files['command'] == 'put':
+                if not os.path.exists(files['local_file_path']):
+                    self.factory.command_out = False
+                    self.factory.connection.transport.write('\r\n')
+                    return
                 self.setRawMode()
                 for bytes in read_bytes_from_file(files['local_file_path']):
                     self.factory.connection.transport.write(bytes)
