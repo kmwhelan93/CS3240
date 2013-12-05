@@ -51,7 +51,6 @@ class Echo(LineReceiver):
         self.commq = commq
 
     def connectionMade(self):
-
         self.connected = False
         self.task_id = task.LoopingCall(self.callback)
         self.task_id.start(.5)
@@ -70,12 +69,8 @@ class Echo(LineReceiver):
         data = json.loads(data)
         self.ciq.append(data)
 
-
-
     def _sendCommand(self, object):
         self.sendLine(json.dumps(object))
-
-
 
 
 class EchoClientFactory(ClientFactory):
