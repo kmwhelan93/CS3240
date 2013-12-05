@@ -85,7 +85,7 @@ class clientInterface:
         self.changeDirectoryButton = Button(self.root, text="Change Directory", command=lambda: directoryWindow(self))
         self.changeDirectoryButton.grid(row=4, column=1)
 
-        self.exitButton = Button(self.root, text="Exit", width=10)
+        self.exitButton = Button(self.root, text="Exit", width=10, command=lambda:self.root.destroy)
         self.exitButton.grid(row=4, column=2)
 
         self.center(self.root)
