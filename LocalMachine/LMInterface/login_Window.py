@@ -1,6 +1,7 @@
 __author__ = 'Michael Gilbertson'
 
 from Tkinter import *
+import os
 
 class loginWindow:
 
@@ -46,18 +47,14 @@ class loginWindow:
         self.directoryLabel = Label(self.lwin, text="Directory:", padx=5, pady=5)
         self.directoryLabel.grid(row=5, column=0, columnspan=1)
 
-        self.directoryEntry = Entry(self.lwin, width=40, bg="white", validate=ALL, validatecommand=self.validateEdit)
+        self.v = StringVar()
+        self.v.set(os.path.join(os.getenv("HOME"),"onedir"))
+        self.directoryEntry = Entry(self.lwin, width=40, bg="white", validate=ALL, textvariable=self.v, validatecommand=self.validateEdit)
         self.directoryEntry.grid(row=5, column=1, columnspan=2)
 
         self.setUpButton = Button(self.lwin, text="Sign Up", width=40,
                 command=lambda:self.signup(self.usernameEntry.get(), self.passwordEntry.get(), self.directoryEntry.get()))
         self.setUpButton.grid(row=6, column=0, columnspan=3)
-
-        self.ipLabel = Label(self.lwin, text="Server IP:")
-        self.ipLabel.grid(row = 7, column=0)
-
-        self.ipEntry = Entry(self.lwin, width=15, bg="white", validate=ALL, validatecommand=self.validateEdit)
-        self.ipEntry.grid(row=7, column=1, columnspan=2)
 
         self.UI.center(self.lwin)
 
