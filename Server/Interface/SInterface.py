@@ -9,6 +9,8 @@ from PIL import ImageTk
 import subprocess
 import threading
 import Queue
+import os
+import common
 
 # A small class that wraps the TextView widgets so they are read only
 class ReadOnlyText(Text):
@@ -85,7 +87,7 @@ class View(Frame):
         delete.grid(row=6, column=2)
 
         start = Button(self.parent, text="Start Server Daemon", command=self.govnah.startServer)
-        start.grid(row=9, column=0, columnspan=3)
+        start.grid(row=10, column=0, columnspan=3)
 
         self.uinfo = Label(self.parent, text="")
         self.uinfo.grid(row=5, column=1, columnspan=2)
@@ -101,12 +103,21 @@ class View(Frame):
         performChange = Button(self.parent, text="Change OneDir\nDirectory", command=self.chngPath)
         performChange.grid(row=8, column=1, columnspan=2)
 
+        sizeLabel = Label(self.parent, text="Get Sizes")
+        sizeLabel.grid(row=9, column=0)
+
+        sizeUButton = Button(self.parent, text="By User", command=self.govnah.printUsersFileSpace)
+        sizeUButton.grid(row=9, column=1)
+
+        sizeTButton = Button(self.parent, text="Total", command=self.govnah.printTotalFileSpace)
+        sizeTButton.grid(row=9, column=2)
+
         self.img = ImageTk.PhotoImage(file='img/logo50.png')
         logoLabel = Label(self.parent, image=self.img)
-        logoLabel.grid(row=10, column=0)
+        logoLabel.grid(row=11, column=0)
 
         slogan = Label(self.parent, text="This Directory\nis a OneDir!", font=("Helvetica", 10, "bold italic"))
-        slogan.grid(row = 10, column=1, columnspan=2)
+        slogan.grid(row = 11, column=1, columnspan=2)
 
         self.log.insert(END, "Howdy Admin, Welcome to the Server Interface \n\n")
 
@@ -307,6 +318,19 @@ class SInterface():
     def printTransByType(self):
         self.view.appendText("The list of transactions, sorted by type. (Unique ID, username, type, path, size, timestamp)")
         self.printSanitizeDBstrDub(self.db.getTransByType())
+
+    def printUsersFileSpace(self):
+        users = self.db.getUsersByUName()
+        for row in users:
+            up = os.path.join(self.path, row[1])
+            try:
+                self.view.appendText(row[1] + " " + str(common.get_size(up)/1024) + "KB")
+            except:
+                pass
+
+    def printTotalFileSpace(self):
+        up = os.path.join(self.path)
+        self.view.appendText("Total file space used by all users: " + str(common.get_size(up)/1024) + "KB")
 
     def printSanitizeDBstr(self, results):
         for entry in results:
