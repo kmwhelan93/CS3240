@@ -14,6 +14,7 @@ class clientInterface:
     def __init__(self, ciq, commq, server_ip):
         self.passWindow = None
         self.ciq = ciq
+        self.server_ip = server_ip
         self.commq = commq
         self.root = Tk()
         self.prefOps = preferenceOperations()
@@ -23,7 +24,7 @@ class clientInterface:
         self.root.mainloop()
         self.userRow = None
         self.passwordLength = 0
-        self.server_ip = server_ip
+
 
     def callback(self):
         if (len(self.ciq) > 0):
