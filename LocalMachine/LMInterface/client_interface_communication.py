@@ -100,7 +100,7 @@ class EchoClientFactory(ClientFactory):
 
 def client_interface(ciq, commq, server_ip):
     ci = clientInterface(ciq=ciq, commq=commq, server_ip=server_ip)
-    reactor.callFromThread(reactor.stop)
+    #reactor.callFromThread(reactor.stop)
 
 parser = optparse.OptionParser()
 parser.add_option('--server_ip', action='store', type='string', dest='server_ip',
