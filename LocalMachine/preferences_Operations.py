@@ -122,7 +122,7 @@ class preferenceOperations:
             print "Directory path has been updated."
             return True
 
-    def updateAutoSyncSetting(self, username, password):
+    def updateAutoSyncSetting(self, username, password, server_ip):
 
         self.cur.execute("SELECT * FROM Preferences WHERE Username =:Username", {"Username": username})
         curUser = self.cur.fetchone()
@@ -131,7 +131,7 @@ class preferenceOperations:
             AutoSync = 1
             self.cur.execute("UPDATE Preferences SET AutoSync = ? WHERE Username =?", (AutoSync, username))
             self.con.commit()
-            subprocess.Popen(["python", "../LMDaemon/client_daemon.py", "--path", curUser[3], "--user", username, "--password", password])
+            subprocess.Popen(["python", "../LMDaemon/client_daemon.py", "--path", curUser[3], "--user", username, "--password", password, "--ip", server_ip])
             print "AutoSync setting has been turned on."
             return
         else:
@@ -159,9 +159,9 @@ class preferenceOperations:
             print "Directory path is valid."
             return True
 
-    def checkStartDaemon(self, username, password):
+    def checkStartDaemon(self, username, password, server_ip):
         if self.getAutoSyncSetting(username):
-            subprocess.Popen(["python", "../LMDaemon/client_daemon.py", "--path", self.getDirectoryPath(username), "--user", username, "--password", password])
+            subprocess.Popen(["python", "../LMDaemon/client_daemon.py", "--path", self.getDirectoryPath(username), "--user", username, "--password", password, "--ip", server_ip])
         else:
             ps = subprocess.Popen("ps -ef | grep client_daemon.py | grep -v grep", shell=True, stdout=subprocess.PIPE)
             output = ps.stdout.read()
